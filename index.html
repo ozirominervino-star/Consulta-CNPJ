@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta CNPJ + Inscrição Estadual (Sintegra)</title>
+    
+    <!-- Configuração limpa e correta para servidores como o GitHub Pages -->
+    <link rel="icon" type="image/png" href="image_b77415.png">
+    <link rel="shortcut icon" type="image/png" href="image_b77415.png">
+    
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f8;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h2 {
+            text-align: center;
+            color: #1a365d;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #718096;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        input {
+            flex: 2;
+            min-width: 200px;
+            padding: 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 16px;
+            outline: none;
+        }
+        select {
+            flex: 0.5;
+            min-width: 80px;
+            padding: 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 16px;
+            outline: none;
+            background-color: white;
+        }
+        input:focus, select:focus {
+            border-color: #3182ce;
+        }
+        button {
+            padding: 14px 28px;
+            background-color: #3182ce;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2b6cb0;
+        }
+        button:disabled {
+            background-color: #cbd5e0;
+            cursor: not-allowed;
+        }
+        .warning-banner {
+            color: #856404;
+            background-color: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            border: 1px solid #ffeeba;
+            display: none;
+            font-size: 14px;
+        }
+        .gov-link-btn {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 10px 16px;
+            background-color: #e53e3e;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 13px;
+            margin-right: 10px;
+        }
+        .gov-link-btn.simples {
+            background-color: #007a33;
+        }
+        .loading {
+            text-align: center;
+            color: #3182ce;
+            font-weight: bold;
+            margin: 20px 0;
+            display: none;
+        }
+        .highlights-container {
+            display: none;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .highlight-box {
+            background-color: #ebf8ff;
+            border-left: 6px solid #3182ce;
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+        }
+        .highlight-box.green {
+            background-color: #f0fff4;
+            border-left-color: #38a169;
+        }
+        .highlight-box.orange {
+            background-color: #fffaf0;
+            border-left-color: #dd6b20;
+        }
+        .highlight-box h3 {
+            margin: 0 0 5px 0;
+            color: #2b6cb0;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        .highlight-box.green h3 { color: #276749; }
+        .highlight-box.orange h3 { color: #dd6b20; }
+        .highlight-box p {
+            margin: 0;
+            font-size: 18px;
+            font-weight: bold;
+            color: #2d3748;
+        }
+        .result-box {
+            display: none;
+        }
+        .section-title {
+            font-size: 16px;
+            color: #2b6cb0;
+            border-bottom: 2px solid #edf2f7;
+            padding-bottom: 6px;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 15px;
+        }
+        .result-item {
+            font-size: 14px;
+            background-color: #f8fafc;
+            padding: 10px 12px;
+            border-radius: 6px;
+            border: 1px solid #edf2f7;
+        }
+        .result-item.destaque-ie {
+            background-color: #fffaf0;
+            border: 1px solid #fbd38d;
+        }
+        .result-item strong {
+            display: block;
+            color: #4a5568;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        ul { margin: 0; padding-left: 20px; font-size: 14px; }
+        li { margin-bottom: 6px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Consulta Cadastral Avançada</h2>
+    <div class="subtitle">Módulo de Validação Fiscal Estaduais (Sintegra / IE)</div>
+    
+    <div class="search-box">
+        <input type="text" id="cnpjInput" placeholder="Digite o CNPJ (com ou sem formatação)" maxlength="18">
+        <select id="ufSelect">
+            <option value="">UF</option>
+            <option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option>
+            <option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option>
+            <option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option>
+            <option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option>
+            <option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option>
+            <option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option>
+            <option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option>
+            <option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option>
+            <option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option>
+        </select>
+        <button id="btnConsultar" onclick="consultarCNPJ()">Consultar</button>
+    </div>
+
+    <div id="loadingMessage" class="loading">Consultando bases integradas da SEFAZ... Por favor, aguarde.</div>
+    <div id="warningMessage" class="warning-banner"></div>
+
+    <div id="highlightsContainer" class="highlights-container">
+        <div class="highlight-box orange">
+            <h3>Inscrição Estadual (IE)</h3>
+            <p id="ieDestaque">Não identificada</p>
+        </div>
+        <div class="highlight-box green">
+            <h3>Regime Tributário</h3>
+            <p id="regimeTributario">-</p>
+        </div>
+        <div class="highlight-box">
+            <h3>Última Atualização</h3>
+            <p id="dataUltimaAlteracao">--/--/----</p>
+        </div>
+    </div>
+
+    <div id="resultBox" class="result-box">
+        <div class="section-title">Dados Cadastrais Básicos</div>
+        <div class="grid">
+            <div class="result-item destaque-ie"><strong>Inscrição Estadual (Sintegra)</strong><span id="inscricaoEstadual" style="font-weight: bold; color: #dd6b20;">Buscando...</span></div>
+            <div class="result-item"><strong>Razão Social</strong><span id="razaoSocial"></span></div>
+            <div class="result-item"><strong>Nome Fantasia</strong><span id="nomeFantasia"></span></div>
+            <div class="result-item"><strong>Situação Cadastral</strong><span id="situacao"></span></div>
+            <div class="result-item"><strong>Data de Abertura</strong><span id="dataAbertura"></span></div>
+            <div class="result-item"><strong>Natureza Jurídica</strong><span id="naturezaJuridica"></span></div>
+            <div class="result-item"><strong>Capital Social</strong><span id="capitalSocial"></span></div>
+            <div class="result-item"><strong>Porte</strong><span id="porte"></span></div>
+        </div>
+
+        <div class="section-title">Localização e Contato</div>
+        <div class="grid">
+            <div class="result-item"><strong>Logradouro / Endereço</strong><span id="logradouro"></span></div>
+            <div class="result-item"><strong>Bairro</strong><span id="bairro"></span></div>
+            <div class="result-item"><strong>Cidade / Município</strong><span id="municipio"></span></div>
+            <div class="result-item"><strong>UF (Estado)</strong><span id="uf"></span></div>
+            <div class="result-item"><strong>CEP</strong><span id="cep"></span></div>
+            <div class="result-item"><strong>Telefone</strong><span id="telefone"></span></div>
+            <div class="result-item"><strong>E-mail</strong><span id="email"></span></div>
+        </div>
+
+        <div class="section-title">Atividade Econômica Principal (CNAE)</div>
+        <div class="result-item" style="width: 100%; box-sizing: border-box;">
+            <strong>CNAE Principal</strong>
+            <span id="cnaePrincipal"></span>
+        </div>
+
+        <div class="section-title">Atividades Econômicas Secundárias</div>
+        <ul id="cnaesSecundarios"></ul>
+    </div>
+</div>
+
+<script>
+    function formatarDataBR(dataString) {
+        if (!dataString) return 'N/A';
+        if (dataString.includes('/')) return dataString;
+        if (dataString.includes('T')) dataString = dataString.split('T')[0];
+        const partes = dataString.split('-');
+        if (partes.length === 3) {
+            return partes[0].length === 4 ? `${partes[2]}/${partes[1]}/${partes[0]}` : `${partes[0]}/${partes[1]}/${partes[2]}`;
+        }
+        return dataString;
+    }
+
+    function formatarMoeda(valor) {
+        if (!valor) return 'R$ 0,00';
+        if (typeof valor === 'string') valor = parseFloat(valor.replace(/[^0-9,.-]/g, '').replace(',', '.'));
+        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
+    }
+
+    function consultarReceitaWS(cnpj) {
+        return new Promise((resolve, reject) => {
+            const callbackName = 'callbackRWS_' + Math.round(100000 * Math.random());
+            window[callbackName] = function(data) {
+                delete window[callbackName];
+                document.body.removeChild(script);
+                if (data.status === "ERROR") reject(new Error(data.message));
+                else resolve(data);
+            };
+            const script = document.createElement('script');
+            script.src = `https://receitaws.com.br/v1/cnpj/${cnpj}?callback=${callbackName}`;
+            script.onerror = () => reject(new Error("Erro de rede ReceitaWS"));
+            document.body.appendChild(script);
+        });
+    }
+
+    async function consultarCNPJ() {
+        const cnpjInput = document.getElementById('cnpjInput');
+        const ufSelect = document.getElementById('ufSelect');
+        const btnConsultar = document.getElementById('btnConsultar');
+        const warningDiv = document.getElementById('warningMessage');
+        const loadingDiv = document.getElementById('loadingMessage');
+        const resultBox = document.getElementById('resultBox');
+        const highlightsContainer = document.getElementById('highlightsContainer');
+
+        const cnpj = cnpjInput.value.replace(/\D/g, '');
+        const ufSelecionada = ufSelect.value;
+
+        warningDiv.style.display = 'none';
+        warningDiv.innerHTML = '';
+        resultBox.style.display = 'none';
+        highlightsContainer.style.display = 'none';
+
+        if (cnpj.length !== 14) {
+            warningDiv.textContent = "Por favor, insira um CNPJ válido com 14 números.";
+            warningDiv.style.display = 'block';
+            return;
+        }
+
+        loadingDiv.style.display = 'block';
+        btnConsultar.disabled = true;
+
+        let dadosTratados = null;
+        let HTMLAviso = "";
+        
+        const urlSintegra = "http://www.sintegra.gov.br/";
+        const urlSimples = "https://servicos.receita.fazenda.gov.br/Servicos/simplesnacional/aplicacoes/atbhe/consultaoptantes.app/";
+
+        try {
+            const response = await axios.get(`https://brasilapi.com.br/api/cnpj/v2/${cnpj}`);
+            const data = response.data;
+
+            let regimeTexto = "Regime Geral (Lucro Presumido/Real)";
+            if (data.opcao_pelo_mei) regimeTexto = "Optante pelo MEI";
+            else if (data.opcao_pelo_simples) regimeTexto = "Optante pelo Simples Nacional";
+
+            let ieEncontrada = "Isento / Não Consta";
+            if (data.inscricoes_estaduais && data.inscricoes_estaduais.length > 0) {
+                const filtroIE = data.inscricoes_estaduais.find(i => i.uf === ufSelecionada) || data.inscricoes_estaduais[0];
+                ieEncontrada = filtroIE.inscricao_estadual || "Não localizada";
+            }
+
+            dadosTratados = {
+                ie: ieEncontrada,
+                regime: regimeTexto,
+                ultimaAlteracao: formatarDataBR(data.data_situacao_cadastral),
+                razaoSocial: data.razao_social,
+                nomeFantasia: data.nome_fantasia || 'N/A',
+                situacao: data.descricao_situacao_cadastral,
+                abertura: formatarDataBR(data.data_inicio_atividade),
+                natureza: data.natureza_juridica,
+                capital: formatarMoeda(data.capital_social),
+                porte: data.porte,
+                endereco: `${data.logradouro || ''}, Nº ${data.numero || ''} ${data.complemento ? '- ' + data.complemento : ''}`,
+                bairro: data.bairro,
+                municipio: data.municipio,
+                uf: data.uf,
+                cep: data.cep,
+                telefone: data.ddd_telefone_1,
+                email: data.email,
+                cnaePrincipal: `${data.cnae_fiscal} - ${data.cnae_fiscal_descricao}`,
+                cnaesSecundarios: data.cnaes_secundarios ? data.cnaes_secundarios.map(i => `${i.codigo} - ${i.descricao}`) : []
+            };
+
+        } catch (errorAPI) {
+            console.log("BrasilAPI falhou. Acionando ReceitaWS secundário...");
+            try {
+                const dataRWS = await consultarReceitaWS(cnpj);
+
+                let regimeTextoRWS = "Regime Geral (Lucro Presumido/Real)";
+                if (dataRWS.simples && dataRWS.simples.optante === true) {
+                    regimeTextoRWS = dataRWS.simples.mei === true ? "Optante pelo MEI" : "Optante pelo Simples Nacional";
+                }
+
+                HTMLAviso = `<div><strong>Aviso Sintegra:</strong> A base secundária não possui o espelho automático da Inscrição Estadual. Se aplicável para este estado, faça a validação visual no portal regulador:</div>
+                             <a href="${urlSintegra}" target="_blank" class="gov-link-btn">Acessar Mapa Sintegra ↗</a>`;
+
+                dadosTratados = {
+                    ie: "Requer Consulta Manual",
+                    regime: regimeTextoRWS,
+                    ultimaAlteracao: formatarDataBR(dataRWS.ultima_atualizacao),
+                    razaoSocial: dataRWS.nome,
+                    nomeFantasia: dataRWS.fantasia || 'N/A',
+                    situacao: dataRWS.situacao,
+                    abertura: formatarDataBR(dataRWS.abertura),
+                    natureza: dataRWS.natureza_juridica,
+                    capital: formatarMoeda(dataRWS.capital_social),
+                    porte: dataRWS.porte,
+                    endereco: `${dataRWS.logradouro || ''}, Nº ${dataRWS.numero || ''}`,
+                    bairro: dataRWS.bairro,
+                    municipio: dataRWS.municipio,
+                    uf: dataRWS.uf,
+                    cep: dataRWS.cep,
+                    telefone: dataRWS.telefone,
+                    email: dataRWS.email,
+                    cnaePrincipal: dataRWS.atividade_principal && dataRWS.atividade_principal[0] ? `${dataRWS.atividade_principal[0].code} - ${dataRWS.atividade_principal[0].text}` : 'N/A',
+                    cnaesSecundarios: dataRWS.atividades_secundarias ? dataRWS.atividades_secundarias.map(i => `${i.code} - ${i.text}`) : []
+                };
+            } catch (errorFallback) {
+                HTMLAviso = `<div><strong>Erro Crítico:</strong> CNPJ indisponível nos servidores. Faça a validação manual nos órgãos emissores:</div>
+                             <a href="${urlSintegra}" target="_blank" class="gov-link-btn">Consultar Sintegra ↗</a>
+                             <a href="${urlSimples}" target="_blank" class="gov-link-btn simples">Verificar Simples Nacional ↗</a>`;
+                
+                dadosTratados = {
+                    ie: "Não Localizada", regime: "Desconhecido", ultimaAlteracao: "N/A", razaoSocial: "Não encontrado", nomeFantasia: "N/A",
+                    situacao: "INDISPONÍVEL", abertura: "N/A", natureza: "N/A", capital: "R$ 0,00", porte: "N/A",
+                    endereco: "N/A", bairro: "N/A", municipio: "N/A", uf: "N/A", cep: "N/A", telefone: "N/A", email: "N/A",
+                    cnaePrincipal: "N/A", cnaesSecundarios: []
+                };
+            }
+        }
+
+        if (dadosTratados) {
+            if (HTMLAviso) {
+                warningDiv.innerHTML = HTMLAviso;
+                warningDiv.style.display = 'block';
+            }
+
+            document.getElementById('ieDestaque').textContent = dadosTratados.ie;
+            document.getElementById('inscricaoEstadual').textContent = dadosTratados.ie;
+
+            document.getElementById('regimeTributario').textContent = dadosTratados.regime;
+            document.getElementById('dataUltimaAlteracao').textContent = dadosTratados.ultimaAlteracao;
+            
+            document.getElementById('razaoSocial').textContent = dadosTratados.razaoSocial;
+            document.getElementById('nomeFantasia').textContent = dadosTratados.nomeFantasia;
+            document.getElementById('situacao').textContent = dadosTratados.situacao;
+            document.getElementById('dataAbertura').textContent = dadosTratados.abertura;
+            document.getElementById('naturezaJuridica').textContent = dadosTratados.natureza;
+            document.getElementById('capitalSocial').textContent = dadosTratados.capital;
+            document.getElementById('porte').textContent = dadosTratados.porte;
+
+            document.getElementById('logradouro').textContent = dadosTratados.endereco;
+            document.getElementById('bairro').textContent = dadosTratados.bairro;
+            document.getElementById('municipio').textContent = dadosTratados.municipio;
+            document.getElementById('uf').textContent = dadosTratados.uf;
+            document.getElementById('cep').textContent = dadosTratados.cep;
+            document.getElementById('telefone').textContent = dadosTratados.telefone;
+            document.getElementById('email').textContent = dadosTratados.email;
+
+            document.getElementById('cnaePrincipal').textContent = dadosTratados.cnaePrincipal;
+
+            const listaSecundarios = document.getElementById('cnaesSecundarios');
+            listaSecundarios.innerHTML = '';
+            if (dadosTratados.cnaesSecundarios.length > 0) {
+                dadosTratados.cnaesSecundarios.forEach(texto => {
+                    const li = document.createElement('li');
+                    li.textContent = texto;
+                    listaSecundarios.appendChild(li);
+                });
+            } else {
+                listaSecundarios.innerHTML = '<li>Nenhuma atividade secundária cadastrada.</li>';
+            }
+
+            highlightsContainer.style.display = 'grid';
+            resultBox.style.display = 'block';
+        }
+
+        loadingDiv.style.display = 'none';
+        btnConsultar.disabled = false;
+    }
+</script>
+
+</body>
+</html>
