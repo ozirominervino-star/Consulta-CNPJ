@@ -1,470 +1,608 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consulta CNPJ + Inscrição Estadual (Sintegra)</title>
-    
-    <!-- Configuração limpa e correta para servidores como o GitHub Pages -->
-    <link rel="icon" type="image/png" href="image_b77415.png">
-    <link rel="shortcut icon" type="image/png" href="image_b77415.png">
-    
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f4f8;
-            margin: 0;
-            padding: 20px;
-            color: #333;
-        }
-        .container {
-            background-color: #ffffff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-            width: 100%;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        h2 {
-            text-align: center;
-            color: #1a365d;
-            margin-bottom: 5px;
-        }
-        .subtitle {
-            text-align: center;
-            color: #718096;
-            margin-bottom: 25px;
-            font-size: 14px;
-        }
-        .search-box {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-        input {
-            flex: 2;
-            min-width: 200px;
-            padding: 14px;
-            border: 2px solid #e2e8f0;
-            border-radius: 6px;
-            font-size: 16px;
-            outline: none;
-        }
-        select {
-            flex: 0.5;
-            min-width: 80px;
-            padding: 14px;
-            border: 2px solid #e2e8f0;
-            border-radius: 6px;
-            font-size: 16px;
-            outline: none;
-            background-color: white;
-        }
-        input:focus, select:focus {
-            border-color: #3182ce;
-        }
-        button {
-            padding: 14px 28px;
-            background-color: #3182ce;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #2b6cb0;
-        }
-        button:disabled {
-            background-color: #cbd5e0;
-            cursor: not-allowed;
-        }
-        .warning-banner {
-            color: #856404;
-            background-color: #fff3cd;
-            padding: 15px;
-            border-radius: 8px;
-            font-weight: 500;
-            margin-bottom: 20px;
-            border: 1px solid #ffeeba;
-            display: none;
-            font-size: 14px;
-        }
-        .gov-link-btn {
-            display: inline-block;
-            margin-top: 10px;
-            padding: 10px 16px;
-            background-color: #e53e3e;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            font-weight: bold;
-            font-size: 13px;
-            margin-right: 10px;
-        }
-        .gov-link-btn.simples {
-            background-color: #007a33;
-        }
-        .loading {
-            text-align: center;
-            color: #3182ce;
-            font-weight: bold;
-            margin: 20px 0;
-            display: none;
-        }
-        .highlights-container {
-            display: none;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-        .highlight-box {
-            background-color: #ebf8ff;
-            border-left: 6px solid #3182ce;
-            padding: 15px;
-            border-radius: 0 8px 8px 0;
-        }
-        .highlight-box.green {
-            background-color: #f0fff4;
-            border-left-color: #38a169;
-        }
-        .highlight-box.orange {
-            background-color: #fffaf0;
-            border-left-color: #dd6b20;
-        }
-        .highlight-box h3 {
-            margin: 0 0 5px 0;
-            color: #2b6cb0;
-            font-size: 12px;
-            text-transform: uppercase;
-        }
-        .highlight-box.green h3 { color: #276749; }
-        .highlight-box.orange h3 { color: #dd6b20; }
-        .highlight-box p {
-            margin: 0;
-            font-size: 18px;
-            font-weight: bold;
-            color: #2d3748;
-        }
-        .result-box {
-            display: none;
-        }
-        .section-title {
-            font-size: 16px;
-            color: #2b6cb0;
-            border-bottom: 2px solid #edf2f7;
-            padding-bottom: 6px;
-            margin-top: 25px;
-            margin-bottom: 15px;
-            font-weight: bold;
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 15px;
-        }
-        .result-item {
-            font-size: 14px;
-            background-color: #f8fafc;
-            padding: 10px 12px;
-            border-radius: 6px;
-            border: 1px solid #edf2f7;
-        }
-        .result-item.destaque-ie {
-            background-color: #fffaf0;
-            border: 1px solid #fbd38d;
-        }
-        .result-item strong {
-            display: block;
-            color: #4a5568;
-            font-size: 12px;
-            text-transform: uppercase;
-            margin-bottom: 4px;
-        }
-        ul { margin: 0; padding-left: 20px; font-size: 14px; }
-        li { margin-bottom: 6px; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Consulta de CNPJ - ReceitaWS</title>
+  <link rel="icon" type="image/png" href="image_b77415.png">
+  <link rel="shortcut icon" type="image/png" href="image_b77415.png">
+  <style>
+    :root {
+      --bg: #eef3f2;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #64748b;
+      --line: #dbe3ea;
+      --soft: #f8fafc;
+      --primary: #0877ee;
+      --primary-dark: #065fbd;
+      --success: #15803d;
+      --danger: #dc2626;
+      --warning-bg: #fff7ed;
+      --warning-line: #fed7aa;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 28px 16px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 980px;
+      margin: 0 auto;
+      background: var(--card);
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.10);
+      padding: 28px;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      text-align: center;
+      font-size: 30px;
+    }
+
+    .subtitle {
+      margin: 0 0 26px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .search {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) auto;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    input {
+      width: 100%;
+      min-height: 54px;
+      border: 1px solid #cbd5e1;
+      border-radius: 5px;
+      padding: 0 14px;
+      font-size: 18px;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(8, 119, 238, 0.12);
+    }
+
+    button {
+      min-height: 54px;
+      border: 0;
+      border-radius: 5px;
+      padding: 0 24px;
+      background: var(--primary);
+      color: #fff;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: var(--primary-dark);
+    }
+
+    button:disabled {
+      background: #94a3b8;
+      cursor: wait;
+    }
+
+    .message {
+      display: none;
+      border-radius: 6px;
+      padding: 13px 14px;
+      margin: 12px 0 18px;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .message.error {
+      display: block;
+      color: var(--danger);
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+    }
+
+    .message.info {
+      display: block;
+      color: #075985;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+    }
+
+    .message.warning {
+      display: block;
+      color: #9a3412;
+      background: var(--warning-bg);
+      border: 1px solid var(--warning-line);
+      font-weight: 600;
+    }
+
+    .summary {
+      display: none;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: 8px 0 22px;
+    }
+
+    .summary-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--soft);
+      padding: 14px;
+      min-height: 82px;
+    }
+
+    .summary-card strong {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      margin-bottom: 7px;
+    }
+
+    .summary-card span {
+      display: block;
+      font-size: 17px;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+
+    .summary-card .ok {
+      color: var(--success);
+    }
+
+    .result {
+      display: none;
+    }
+
+    .section-title {
+      margin: 26px 0 10px;
+      padding-bottom: 7px;
+      border-bottom: 2px solid #e5e7eb;
+      color: #1d4ed8;
+      font-size: 17px;
+      font-weight: 700;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .field {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--soft);
+      padding: 11px 12px;
+      min-height: 62px;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    .field strong {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    .field span {
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    li {
+      margin-bottom: 6px;
+    }
+
+    .empty {
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    @media (max-width: 720px) {
+      .container {
+        padding: 22px 16px;
+      }
+
+      h1 {
+        font-size: 25px;
+      }
+
+      .search,
+      .summary,
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
 </head>
 <body>
+  <main class="container">
+    <h1>Consulta de CNPJ</h1>
+    <p class="subtitle">Consulta pública usando ReceitaWS, com retorno no mesmo padrão de informações da API.</p>
 
-<div class="container">
-    <h2>Consulta Cadastral Avançada</h2>
-    <div class="subtitle">Módulo de Validação Fiscal Estaduais (Sintegra / IE)</div>
-    
-    <div class="search-box">
-        <input type="text" id="cnpjInput" placeholder="Digite o CNPJ (com ou sem formatação)" maxlength="18">
-        <select id="ufSelect">
-            <option value="">UF</option>
-            <option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option>
-            <option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option>
-            <option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option>
-            <option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option>
-            <option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option>
-            <option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option>
-            <option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option>
-            <option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option>
-            <option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option>
-        </select>
-        <button id="btnConsultar" onclick="consultarCNPJ()">Consultar</button>
+    <div class="search">
+      <input id="cnpjInput" type="text" inputmode="numeric" autocomplete="off" maxlength="18" placeholder="Digite o CNPJ" value="">
+      <button id="consultarBtn" type="button">Consultar</button>
     </div>
 
-    <div id="loadingMessage" class="loading">Consultando bases integradas da SEFAZ... Por favor, aguarde.</div>
-    <div id="warningMessage" class="warning-banner"></div>
+    <div id="message" class="message"></div>
 
-    <div id="highlightsContainer" class="highlights-container">
-        <div class="highlight-box orange">
-            <h3>Inscrição Estadual (IE)</h3>
-            <p id="ieDestaque">Não identificada</p>
-        </div>
-        <div class="highlight-box green">
-            <h3>Regime Tributário</h3>
-            <p id="regimeTributario">-</p>
-        </div>
-        <div class="highlight-box">
-            <h3>Última Atualização</h3>
-            <p id="dataUltimaAlteracao">--/--/----</p>
-        </div>
-    </div>
+    <section id="summary" class="summary">
+      <div class="summary-card">
+        <strong>Status</strong>
+        <span id="resumoStatus"></span>
+      </div>
+      <div class="summary-card">
+        <strong>Situação</strong>
+        <span id="resumoSituacao"></span>
+      </div>
+      <div class="summary-card">
+        <strong>Simples</strong>
+        <span id="resumoSimples"></span>
+      </div>
+      <div class="summary-card">
+        <strong>Última atualização</strong>
+        <span id="resumoAtualizacao"></span>
+      </div>
+    </section>
 
-    <div id="resultBox" class="result-box">
-        <div class="section-title">Dados Cadastrais Básicos</div>
-        <div class="grid">
-            <div class="result-item destaque-ie"><strong>Inscrição Estadual (Sintegra)</strong><span id="inscricaoEstadual" style="font-weight: bold; color: #dd6b20;">Buscando...</span></div>
-            <div class="result-item"><strong>Razão Social</strong><span id="razaoSocial"></span></div>
-            <div class="result-item"><strong>Nome Fantasia</strong><span id="nomeFantasia"></span></div>
-            <div class="result-item"><strong>Situação Cadastral</strong><span id="situacao"></span></div>
-            <div class="result-item"><strong>Data de Abertura</strong><span id="dataAbertura"></span></div>
-            <div class="result-item"><strong>Natureza Jurídica</strong><span id="naturezaJuridica"></span></div>
-            <div class="result-item"><strong>Capital Social</strong><span id="capitalSocial"></span></div>
-            <div class="result-item"><strong>Porte</strong><span id="porte"></span></div>
-        </div>
+    <section id="result" class="result">
+      <div class="section-title">Dados da empresa</div>
+      <div class="grid">
+        <div class="field"><strong>CNPJ</strong><span data-field="cnpj"></span></div>
+        <div class="field"><strong>Inscrição Estadual</strong><span id="inscricaoEstadual"></span></div>
+        <div class="field"><strong>Tipo</strong><span data-field="tipo"></span></div>
+        <div class="field full"><strong>Nome / Razão social</strong><span data-field="nome"></span></div>
+        <div class="field"><strong>Nome fantasia</strong><span data-field="fantasia"></span></div>
+        <div class="field"><strong>Porte</strong><span data-field="porte"></span></div>
+        <div class="field"><strong>Abertura</strong><span data-field="abertura"></span></div>
+        <div class="field"><strong>Natureza jurídica</strong><span data-field="natureza_juridica"></span></div>
+        <div class="field"><strong>Capital social</strong><span data-field="capital_social"></span></div>
+      </div>
 
-        <div class="section-title">Localização e Contato</div>
-        <div class="grid">
-            <div class="result-item"><strong>Logradouro / Endereço</strong><span id="logradouro"></span></div>
-            <div class="result-item"><strong>Bairro</strong><span id="bairro"></span></div>
-            <div class="result-item"><strong>Cidade / Município</strong><span id="municipio"></span></div>
-            <div class="result-item"><strong>UF (Estado)</strong><span id="uf"></span></div>
-            <div class="result-item"><strong>CEP</strong><span id="cep"></span></div>
-            <div class="result-item"><strong>Telefone</strong><span id="telefone"></span></div>
-            <div class="result-item"><strong>E-mail</strong><span id="email"></span></div>
-        </div>
+      <div class="section-title">Situação cadastral</div>
+      <div class="grid">
+        <div class="field"><strong>Situação</strong><span data-field="situacao"></span></div>
+        <div class="field"><strong>Data da situação</strong><span data-field="data_situacao"></span></div>
+        <div class="field"><strong>Motivo da situação</strong><span data-field="motivo_situacao"></span></div>
+        <div class="field"><strong>EFR</strong><span data-field="efr"></span></div>
+        <div class="field"><strong>Situação especial</strong><span data-field="situacao_especial"></span></div>
+        <div class="field"><strong>Data situação especial</strong><span data-field="data_situacao_especial"></span></div>
+      </div>
 
-        <div class="section-title">Atividade Econômica Principal (CNAE)</div>
-        <div class="result-item" style="width: 100%; box-sizing: border-box;">
-            <strong>CNAE Principal</strong>
-            <span id="cnaePrincipal"></span>
-        </div>
+      <div class="section-title">Endereço e contato</div>
+      <div class="grid">
+        <div class="field"><strong>Logradouro</strong><span data-field="logradouro"></span></div>
+        <div class="field"><strong>Número</strong><span data-field="numero"></span></div>
+        <div class="field"><strong>Complemento</strong><span data-field="complemento"></span></div>
+        <div class="field"><strong>Bairro</strong><span data-field="bairro"></span></div>
+        <div class="field"><strong>Município</strong><span data-field="municipio"></span></div>
+        <div class="field"><strong>UF</strong><span data-field="uf"></span></div>
+        <div class="field"><strong>CEP</strong><span data-field="cep"></span></div>
+        <div class="field"><strong>Telefone</strong><span data-field="telefone"></span></div>
+        <div class="field full"><strong>E-mail</strong><span data-field="email"></span></div>
+      </div>
 
-        <div class="section-title">Atividades Econômicas Secundárias</div>
-        <ul id="cnaesSecundarios"></ul>
-    </div>
-</div>
+      <div class="section-title">Atividade econômica principal</div>
+      <div class="field full">
+        <strong>Atividade principal</strong>
+        <ul id="atividadePrincipal"></ul>
+      </div>
 
-<script>
-    function formatarDataBR(dataString) {
-        if (!dataString) return 'N/A';
-        if (dataString.includes('/')) return dataString;
-        if (dataString.includes('T')) dataString = dataString.split('T')[0];
-        const partes = dataString.split('-');
-        if (partes.length === 3) {
-            return partes[0].length === 4 ? `${partes[2]}/${partes[1]}/${partes[0]}` : `${partes[0]}/${partes[1]}/${partes[2]}`;
+      <div class="section-title">Atividades econômicas secundárias</div>
+      <div class="field full">
+        <strong>Atividades secundárias</strong>
+        <ul id="atividadesSecundarias"></ul>
+      </div>
+
+      <div class="section-title">Quadro societário</div>
+      <div class="field full">
+        <strong>QSA</strong>
+        <ul id="qsa"></ul>
+      </div>
+
+      <div class="section-title">Simples Nacional e SIMEI</div>
+      <div class="grid">
+        <div class="field"><strong>Simples - optante</strong><span id="simplesOptante"></span></div>
+        <div class="field"><strong>Simples - data opção</strong><span id="simplesDataOpcao"></span></div>
+        <div class="field"><strong>Simples - data exclusão</strong><span id="simplesDataExclusao"></span></div>
+        <div class="field"><strong>Simples - última atualização</strong><span id="simplesAtualizacao"></span></div>
+        <div class="field"><strong>SIMEI - optante</strong><span id="simeiOptante"></span></div>
+        <div class="field"><strong>SIMEI - data opção</strong><span id="simeiDataOpcao"></span></div>
+        <div class="field"><strong>SIMEI - data exclusão</strong><span id="simeiDataExclusao"></span></div>
+        <div class="field"><strong>SIMEI - última atualização</strong><span id="simeiAtualizacao"></span></div>
+      </div>
+
+      <div class="section-title">Informações técnicas do ReceitaWS</div>
+      <div class="grid">
+        <div class="field"><strong>Status</strong><span data-field="status"></span></div>
+        <div class="field"><strong>Última atualização</strong><span data-field="ultima_atualizacao"></span></div>
+        <div class="field"><strong>Billing - free</strong><span id="billingFree"></span></div>
+        <div class="field"><strong>Billing - database</strong><span id="billingDatabase"></span></div>
+        <div class="field full"><strong>Extra</strong><span id="extra"></span></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const input = document.getElementById('cnpjInput');
+    const button = document.getElementById('consultarBtn');
+    const message = document.getElementById('message');
+    const result = document.getElementById('result');
+    const summary = document.getElementById('summary');
+
+    input.addEventListener('input', function () {
+      input.value = formatarCnpj(input.value);
+    });
+
+    input.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') consultarCnpj();
+    });
+
+    button.addEventListener('click', consultarCnpj);
+
+    function somenteNumeros(valor) {
+      return String(valor || '').replace(/\D/g, '');
+    }
+
+    function formatarCnpj(valor) {
+      const numeros = somenteNumeros(valor).slice(0, 14);
+      return numeros
+        .replace(/^(\d{2})(\d)/, '$1.$2')
+        .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+        .replace(/\.(\d{3})(\d)/, '.$1/$2')
+        .replace(/(\d{4})(\d)/, '$1-$2');
+    }
+
+    function limparTela() {
+      message.className = 'message';
+      message.textContent = '';
+      message.style.display = 'none';
+      result.style.display = 'none';
+      summary.style.display = 'none';
+    }
+
+    function mostrarMensagem(tipo, texto) {
+      message.className = 'message ' + tipo;
+      message.textContent = texto;
+      message.style.display = 'block';
+    }
+
+    function texto(valor) {
+      if (valor === true) return 'Sim';
+      if (valor === false) return 'Não';
+      if (valor === null || valor === undefined || valor === '') return 'Não informado';
+      return String(valor);
+    }
+
+    function dataHora(valor) {
+      if (!valor) return 'Não informado';
+      if (!String(valor).includes('T')) return valor;
+      const data = new Date(valor);
+      if (Number.isNaN(data.getTime())) return valor;
+      return data.toLocaleString('pt-BR');
+    }
+
+    function capitalSocial(valor) {
+      if (!valor) return 'Não informado';
+      const textoValor = String(valor).trim();
+      const numero = textoValor.includes(',')
+        ? Number(textoValor.replace(/\./g, '').replace(',', '.'))
+        : Number(textoValor);
+      if (Number.isNaN(numero)) return valor;
+      return numero.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function obterInscricaoEstadual(dados) {
+      const candidatos = [
+        dados.inscricao_estadual,
+        dados.inscricaoEstadual,
+        dados.ie,
+        dados.extra && dados.extra.inscricao_estadual,
+        dados.extra && dados.extra.inscricaoEstadual,
+        dados.extra && dados.extra.ie
+      ];
+
+      const inscricoes = dados.inscricoes_estaduais
+        || dados.inscricoesEstaduais
+        || (dados.extra && dados.extra.inscricoes_estaduais)
+        || (dados.extra && dados.extra.inscricoesEstaduais);
+
+      if (Array.isArray(inscricoes) && inscricoes.length) {
+        const valores = inscricoes
+          .map(function (item) {
+            if (typeof item === 'string') return item;
+            return item.inscricao_estadual || item.inscricaoEstadual || item.ie || item.numero;
+          })
+          .filter(Boolean);
+
+        if (valores.length) return valores.join(' / ');
+      }
+
+      return candidatos.find(function (valor) {
+        return valor !== null && valor !== undefined && valor !== '';
+      });
+    }
+
+    function preencherCampo(nome, valor) {
+      const campo = document.querySelector('[data-field="' + nome + '"]');
+      if (!campo) return;
+      campo.textContent = nome === 'ultima_atualizacao' ? dataHora(valor) : texto(valor);
+    }
+
+    function preencherLista(elementoId, itens, vazio) {
+      const lista = document.getElementById(elementoId);
+      lista.innerHTML = '';
+
+      if (!Array.isArray(itens) || itens.length === 0) {
+        const li = document.createElement('li');
+        li.className = 'empty';
+        li.textContent = vazio;
+        lista.appendChild(li);
+        return;
+      }
+
+      itens.forEach(function (item) {
+        const li = document.createElement('li');
+        if (item.code || item.text) {
+          li.textContent = [item.code, item.text].filter(Boolean).join(' - ');
+        } else if (item.nome || item.qual) {
+          li.textContent = [item.nome, item.qual].filter(Boolean).join(' - ');
+        } else {
+          li.textContent = JSON.stringify(item);
         }
-        return dataString;
+        lista.appendChild(li);
+      });
     }
 
-    function formatarMoeda(valor) {
-        if (!valor) return 'R$ 0,00';
-        if (typeof valor === 'string') valor = parseFloat(valor.replace(/[^0-9,.-]/g, '').replace(',', '.'));
-        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
+    function consultarReceitaWs(cnpj) {
+      return new Promise(function (resolve, reject) {
+        const callbackName = 'receitaWsCallback_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+        const script = document.createElement('script');
+        const timeout = window.setTimeout(function () {
+          limparJsonp();
+          reject(new Error('A consulta demorou demais para responder. Tente novamente em alguns instantes.'));
+        }, 30000);
+
+        function limparJsonp() {
+          window.clearTimeout(timeout);
+          delete window[callbackName];
+          if (script.parentNode) script.parentNode.removeChild(script);
+        }
+
+        window[callbackName] = function (dados) {
+          limparJsonp();
+          resolve(dados);
+        };
+
+        script.onerror = function () {
+          limparJsonp();
+          reject(new Error('Não foi possível acessar o ReceitaWS agora.'));
+        };
+
+        script.src = 'https://receitaws.com.br/v1/cnpj/' + cnpj + '?callback=' + callbackName;
+        document.body.appendChild(script);
+      });
     }
 
-    function consultarReceitaWS(cnpj) {
-        return new Promise((resolve, reject) => {
-            const callbackName = 'callbackRWS_' + Math.round(100000 * Math.random());
-            window[callbackName] = function(data) {
-                delete window[callbackName];
-                document.body.removeChild(script);
-                if (data.status === "ERROR") reject(new Error(data.message));
-                else resolve(data);
-            };
-            const script = document.createElement('script');
-            script.src = `https://receitaws.com.br/v1/cnpj/${cnpj}?callback=${callbackName}`;
-            script.onerror = () => reject(new Error("Erro de rede ReceitaWS"));
-            document.body.appendChild(script);
+    async function consultarCnpj() {
+      const cnpj = somenteNumeros(input.value);
+      limparTela();
+
+      if (cnpj.length !== 14) {
+        mostrarMensagem('error', 'Digite um CNPJ válido com 14 números.');
+        return;
+      }
+
+      button.disabled = true;
+      mostrarMensagem('info', 'Consultando ReceitaWS...');
+
+      try {
+        const dados = await consultarReceitaWs(cnpj);
+
+        if (!dados || dados.status === 'ERROR') {
+          throw new Error(dados && dados.message ? dados.message : 'CNPJ não encontrado no ReceitaWS.');
+        }
+
+        const campos = [
+          'abertura',
+          'situacao',
+          'tipo',
+          'nome',
+          'fantasia',
+          'porte',
+          'natureza_juridica',
+          'logradouro',
+          'numero',
+          'complemento',
+          'municipio',
+          'bairro',
+          'uf',
+          'cep',
+          'email',
+          'telefone',
+          'data_situacao',
+          'cnpj',
+          'ultima_atualizacao',
+          'status',
+          'efr',
+          'motivo_situacao',
+          'situacao_especial',
+          'data_situacao_especial'
+        ];
+
+        campos.forEach(function (campo) {
+          preencherCampo(campo, dados[campo]);
         });
+
+        preencherCampo('capital_social', capitalSocial(dados.capital_social));
+        document.getElementById('inscricaoEstadual').textContent = texto(obterInscricaoEstadual(dados));
+        preencherLista('atividadePrincipal', dados.atividade_principal, 'Nenhuma atividade principal informada.');
+        preencherLista('atividadesSecundarias', dados.atividades_secundarias, 'Nenhuma atividade secundária informada.');
+        preencherLista('qsa', dados.qsa, 'Nenhum sócio informado no retorno.');
+
+        const simples = dados.simples || {};
+        const simei = dados.simei || {};
+        document.getElementById('simplesOptante').textContent = texto(simples.optante);
+        document.getElementById('simplesDataOpcao').textContent = texto(simples.data_opcao);
+        document.getElementById('simplesDataExclusao').textContent = texto(simples.data_exclusao);
+        document.getElementById('simplesAtualizacao').textContent = dataHora(simples.ultima_atualizacao);
+        document.getElementById('simeiOptante').textContent = texto(simei.optante);
+        document.getElementById('simeiDataOpcao').textContent = texto(simei.data_opcao);
+        document.getElementById('simeiDataExclusao').textContent = texto(simei.data_exclusao);
+        document.getElementById('simeiAtualizacao').textContent = dataHora(simei.ultima_atualizacao);
+
+        document.getElementById('billingFree').textContent = texto(dados.billing && dados.billing.free);
+        document.getElementById('billingDatabase').textContent = texto(dados.billing && dados.billing.database);
+        document.getElementById('extra').textContent = dados.extra && Object.keys(dados.extra).length
+          ? JSON.stringify(dados.extra, null, 2)
+          : 'Não informado';
+
+        document.getElementById('resumoStatus').textContent = texto(dados.status);
+        document.getElementById('resumoStatus').className = dados.status === 'OK' ? 'ok' : '';
+        document.getElementById('resumoSituacao').textContent = texto(dados.situacao);
+        document.getElementById('resumoSimples').textContent = texto(simples.optante);
+        document.getElementById('resumoAtualizacao').textContent = dataHora(dados.ultima_atualizacao);
+
+        message.style.display = 'none';
+        summary.style.display = 'grid';
+        result.style.display = 'block';
+      } catch (erro) {
+        mostrarMensagem('error', erro.message);
+      } finally {
+        button.disabled = false;
+      }
     }
-
-    async function consultarCNPJ() {
-        const cnpjInput = document.getElementById('cnpjInput');
-        const ufSelect = document.getElementById('ufSelect');
-        const btnConsultar = document.getElementById('btnConsultar');
-        const warningDiv = document.getElementById('warningMessage');
-        const loadingDiv = document.getElementById('loadingMessage');
-        const resultBox = document.getElementById('resultBox');
-        const highlightsContainer = document.getElementById('highlightsContainer');
-
-        const cnpj = cnpjInput.value.replace(/\D/g, '');
-        const ufSelecionada = ufSelect.value;
-
-        warningDiv.style.display = 'none';
-        warningDiv.innerHTML = '';
-        resultBox.style.display = 'none';
-        highlightsContainer.style.display = 'none';
-
-        if (cnpj.length !== 14) {
-            warningDiv.textContent = "Por favor, insira um CNPJ válido com 14 números.";
-            warningDiv.style.display = 'block';
-            return;
-        }
-
-        loadingDiv.style.display = 'block';
-        btnConsultar.disabled = true;
-
-        let dadosTratados = null;
-        let HTMLAviso = "";
-        
-        const urlSintegra = "http://www.sintegra.gov.br/";
-        const urlSimples = "https://servicos.receita.fazenda.gov.br/Servicos/simplesnacional/aplicacoes/atbhe/consultaoptantes.app/";
-
-        try {
-            const response = await axios.get(`https://brasilapi.com.br/api/cnpj/v2/${cnpj}`);
-            const data = response.data;
-
-            let regimeTexto = "Regime Geral (Lucro Presumido/Real)";
-            if (data.opcao_pelo_mei) regimeTexto = "Optante pelo MEI";
-            else if (data.opcao_pelo_simples) regimeTexto = "Optante pelo Simples Nacional";
-
-            let ieEncontrada = "Isento / Não Consta";
-            if (data.inscricoes_estaduais && data.inscricoes_estaduais.length > 0) {
-                const filtroIE = data.inscricoes_estaduais.find(i => i.uf === ufSelecionada) || data.inscricoes_estaduais[0];
-                ieEncontrada = filtroIE.inscricao_estadual || "Não localizada";
-            }
-
-            dadosTratados = {
-                ie: ieEncontrada,
-                regime: regimeTexto,
-                ultimaAlteracao: formatarDataBR(data.data_situacao_cadastral),
-                razaoSocial: data.razao_social,
-                nomeFantasia: data.nome_fantasia || 'N/A',
-                situacao: data.descricao_situacao_cadastral,
-                abertura: formatarDataBR(data.data_inicio_atividade),
-                natureza: data.natureza_juridica,
-                capital: formatarMoeda(data.capital_social),
-                porte: data.porte,
-                endereco: `${data.logradouro || ''}, Nº ${data.numero || ''} ${data.complemento ? '- ' + data.complemento : ''}`,
-                bairro: data.bairro,
-                municipio: data.municipio,
-                uf: data.uf,
-                cep: data.cep,
-                telefone: data.ddd_telefone_1,
-                email: data.email,
-                cnaePrincipal: `${data.cnae_fiscal} - ${data.cnae_fiscal_descricao}`,
-                cnaesSecundarios: data.cnaes_secundarios ? data.cnaes_secundarios.map(i => `${i.codigo} - ${i.descricao}`) : []
-            };
-
-        } catch (errorAPI) {
-            console.log("BrasilAPI falhou. Acionando ReceitaWS secundário...");
-            try {
-                const dataRWS = await consultarReceitaWS(cnpj);
-
-                let regimeTextoRWS = "Regime Geral (Lucro Presumido/Real)";
-                if (dataRWS.simples && dataRWS.simples.optante === true) {
-                    regimeTextoRWS = dataRWS.simples.mei === true ? "Optante pelo MEI" : "Optante pelo Simples Nacional";
-                }
-
-                HTMLAviso = `<div><strong>Aviso Sintegra:</strong> A base secundária não possui o espelho automático da Inscrição Estadual. Se aplicável para este estado, faça a validação visual no portal regulador:</div>
-                             <a href="${urlSintegra}" target="_blank" class="gov-link-btn">Acessar Mapa Sintegra ↗</a>`;
-
-                dadosTratados = {
-                    ie: "Requer Consulta Manual",
-                    regime: regimeTextoRWS,
-                    ultimaAlteracao: formatarDataBR(dataRWS.ultima_atualizacao),
-                    razaoSocial: dataRWS.nome,
-                    nomeFantasia: dataRWS.fantasia || 'N/A',
-                    situacao: dataRWS.situacao,
-                    abertura: formatarDataBR(dataRWS.abertura),
-                    natureza: dataRWS.natureza_juridica,
-                    capital: formatarMoeda(dataRWS.capital_social),
-                    porte: dataRWS.porte,
-                    endereco: `${dataRWS.logradouro || ''}, Nº ${dataRWS.numero || ''}`,
-                    bairro: dataRWS.bairro,
-                    municipio: dataRWS.municipio,
-                    uf: dataRWS.uf,
-                    cep: dataRWS.cep,
-                    telefone: dataRWS.telefone,
-                    email: dataRWS.email,
-                    cnaePrincipal: dataRWS.atividade_principal && dataRWS.atividade_principal[0] ? `${dataRWS.atividade_principal[0].code} - ${dataRWS.atividade_principal[0].text}` : 'N/A',
-                    cnaesSecundarios: dataRWS.atividades_secundarias ? dataRWS.atividades_secundarias.map(i => `${i.code} - ${i.text}`) : []
-                };
-            } catch (errorFallback) {
-                HTMLAviso = `<div><strong>Erro Crítico:</strong> CNPJ indisponível nos servidores. Faça a validação manual nos órgãos emissores:</div>
-                             <a href="${urlSintegra}" target="_blank" class="gov-link-btn">Consultar Sintegra ↗</a>
-                             <a href="${urlSimples}" target="_blank" class="gov-link-btn simples">Verificar Simples Nacional ↗</a>`;
-                
-                dadosTratados = {
-                    ie: "Não Localizada", regime: "Desconhecido", ultimaAlteracao: "N/A", razaoSocial: "Não encontrado", nomeFantasia: "N/A",
-                    situacao: "INDISPONÍVEL", abertura: "N/A", natureza: "N/A", capital: "R$ 0,00", porte: "N/A",
-                    endereco: "N/A", bairro: "N/A", municipio: "N/A", uf: "N/A", cep: "N/A", telefone: "N/A", email: "N/A",
-                    cnaePrincipal: "N/A", cnaesSecundarios: []
-                };
-            }
-        }
-
-        if (dadosTratados) {
-            if (HTMLAviso) {
-                warningDiv.innerHTML = HTMLAviso;
-                warningDiv.style.display = 'block';
-            }
-
-            document.getElementById('ieDestaque').textContent = dadosTratados.ie;
-            document.getElementById('inscricaoEstadual').textContent = dadosTratados.ie;
-
-            document.getElementById('regimeTributario').textContent = dadosTratados.regime;
-            document.getElementById('dataUltimaAlteracao').textContent = dadosTratados.ultimaAlteracao;
-            
-            document.getElementById('razaoSocial').textContent = dadosTratados.razaoSocial;
-            document.getElementById('nomeFantasia').textContent = dadosTratados.nomeFantasia;
-            document.getElementById('situacao').textContent = dadosTratados.situacao;
-            document.getElementById('dataAbertura').textContent = dadosTratados.abertura;
-            document.getElementById('naturezaJuridica').textContent = dadosTratados.natureza;
-            document.getElementById('capitalSocial').textContent = dadosTratados.capital;
-            document.getElementById('porte').textContent = dadosTratados.porte;
-
-            document.getElementById('logradouro').textContent = dadosTratados.endereco;
-            document.getElementById('bairro').textContent = dadosTratados.bairro;
-            document.getElementById('municipio').textContent = dadosTratados.municipio;
-            document.getElementById('uf').textContent = dadosTratados.uf;
-            document.getElementById('cep').textContent = dadosTratados.cep;
-            document.getElementById('telefone').textContent = dadosTratados.telefone;
-            document.getElementById('email').textContent = dadosTratados.email;
-
-            document.getElementById('cnaePrincipal').textContent = dadosTratados.cnaePrincipal;
-
-            const listaSecundarios = document.getElementById('cnaesSecundarios');
-            listaSecundarios.innerHTML = '';
-            if (dadosTratados.cnaesSecundarios.length > 0) {
-                dadosTratados.cnaesSecundarios.forEach(texto => {
-                    const li = document.createElement('li');
-                    li.textContent = texto;
-                    listaSecundarios.appendChild(li);
-                });
-            } else {
-                listaSecundarios.innerHTML = '<li>Nenhuma atividade secundária cadastrada.</li>';
-            }
-
-            highlightsContainer.style.display = 'grid';
-            resultBox.style.display = 'block';
-        }
-
-        loadingDiv.style.display = 'none';
-        btnConsultar.disabled = false;
-    }
-</script>
-
+  </script>
 </body>
 </html>
