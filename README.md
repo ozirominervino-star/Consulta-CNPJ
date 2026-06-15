@@ -1,13 +1,18 @@
-# Consulta de CNPJ - ReceitaWS
+# Ficha Cadastral Comercial - CNPJ
 
-Aplicativo de página única para consultar CNPJ usando a API pública do ReceitaWS.
+Aplicativo de página única para consultar CNPJ usando a API pública do ReceitaWS e transformar o retorno em uma ficha comercial.
 
-## O que foi ajustado
+## Recursos
 
-- A consulta agora usa somente o ReceitaWS, via JSONP, que é o meio indicado para funcionar direto no navegador.
-- A tela mostra os mesmos grupos de informações retornados pelo ReceitaWS: dados da empresa, situação cadastral, endereço, atividades, QSA, Simples Nacional, SIMEI e informações técnicas.
-- Foram removidas as tentativas de Inscrição Estadual/Sintegra, porque esses dados não fazem parte do retorno padrão do ReceitaWS.
-- O erro visual da tela foi corrigido com uma renderização mais simples e segura.
+- Consulta pelo ReceitaWS via JSONP, compatível com uso direto no navegador.
+- Resumo no topo com situação cadastral, Simples Nacional, porte, UF e última atualização.
+- Campo de Inscrição Estadual quando a informação vier disponível no retorno.
+- Alertas básicos de risco cadastral, como empresa não ativa, cadastro recente, ausência de telefone/e-mail e capital social baixo.
+- Recomendação interna salva no navegador: liberado, PIX à vista, analisar crédito, não vender no prazo ou cadastro incompleto.
+- Botão para copiar um resumo pronto para WhatsApp, cadastro ou análise interna.
+- Botão para imprimir ou salvar a ficha em PDF pelo navegador.
+- Histórico local das últimas consultas.
+- Dados técnicos do ReceitaWS agrupados em uma área recolhida.
 
 ## Como usar
 

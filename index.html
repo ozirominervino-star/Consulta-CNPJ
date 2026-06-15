@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Consulta de CNPJ - ReceitaWS</title>
+  <title>Ficha Cadastral Comercial - CNPJ</title>
   <link rel="icon" type="image/png" href="image_b77415.png">
   <link rel="shortcut icon" type="image/png" href="image_b77415.png">
   <style>
@@ -18,13 +18,12 @@
       --primary-dark: #065fbd;
       --success: #15803d;
       --danger: #dc2626;
+      --warning: #b45309;
       --warning-bg: #fff7ed;
       --warning-line: #fed7aa;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -37,7 +36,7 @@
 
     .container {
       width: 100%;
-      max-width: 980px;
+      max-width: 1060px;
       margin: 0 auto;
       background: var(--card);
       border-radius: 10px;
@@ -52,7 +51,7 @@
     }
 
     .subtitle {
-      margin: 0 0 26px;
+      margin: 0 0 24px;
       text-align: center;
       color: var(--muted);
       font-size: 14px;
@@ -62,44 +61,57 @@
       display: grid;
       grid-template-columns: minmax(180px, 1fr) auto;
       gap: 12px;
-      margin-bottom: 18px;
+      margin-bottom: 12px;
     }
 
-    input {
+    input, select, textarea {
       width: 100%;
-      min-height: 54px;
       border: 1px solid #cbd5e1;
       border-radius: 5px;
-      padding: 0 14px;
-      font-size: 18px;
+      font: inherit;
       outline: none;
+      background: #fff;
+      color: var(--text);
     }
 
-    input:focus {
+    input, select {
+      min-height: 52px;
+      padding: 0 14px;
+      font-size: 17px;
+    }
+
+    textarea {
+      min-height: 86px;
+      padding: 12px 14px;
+      resize: vertical;
+    }
+
+    input:focus, select:focus, textarea:focus {
       border-color: var(--primary);
       box-shadow: 0 0 0 3px rgba(8, 119, 238, 0.12);
     }
 
     button {
-      min-height: 54px;
+      min-height: 52px;
       border: 0;
       border-radius: 5px;
-      padding: 0 24px;
+      padding: 0 20px;
       background: var(--primary);
       color: #fff;
-      font-size: 17px;
+      font-size: 16px;
       font-weight: 700;
       cursor: pointer;
     }
 
-    button:hover {
-      background: var(--primary-dark);
+    button:hover { background: var(--primary-dark); }
+    button:disabled { background: #94a3b8; cursor: wait; }
+
+    .ghost-button {
+      background: #e2e8f0;
+      color: #0f172a;
     }
 
-    button:disabled {
-      background: #94a3b8;
-      cursor: wait;
-    }
+    .ghost-button:hover { background: #cbd5e1; }
 
     .message {
       display: none;
@@ -124,19 +136,41 @@
       border: 1px solid #bfdbfe;
     }
 
-    .message.warning {
+    .history {
+      display: none;
+      margin-bottom: 18px;
+    }
+
+    .history strong {
       display: block;
-      color: #9a3412;
-      background: var(--warning-bg);
-      border: 1px solid var(--warning-line);
-      font-weight: 600;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .history-list {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .history-chip {
+      min-height: 34px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: #0f172a;
+      font-size: 13px;
+      cursor: pointer;
     }
 
     .summary {
       display: none;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 12px;
-      margin: 8px 0 22px;
+      margin: 8px 0 20px;
     }
 
     .summary-card {
@@ -157,17 +191,22 @@
 
     .summary-card span {
       display: block;
-      font-size: 17px;
+      font-size: 16px;
       font-weight: 700;
       overflow-wrap: anywhere;
     }
 
-    .summary-card .ok {
-      color: var(--success);
-    }
+    .ok { color: var(--success); }
+    .bad { color: var(--danger); }
+    .warn { color: var(--warning); }
 
-    .result {
-      display: none;
+    .result { display: none; }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
     }
 
     .section-title {
@@ -185,6 +224,8 @@
       gap: 12px;
     }
 
+    .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
     .field {
       border: 1px solid var(--line);
       border-radius: 6px;
@@ -193,9 +234,7 @@
       min-height: 62px;
     }
 
-    .field.full {
-      grid-column: 1 / -1;
-    }
+    .field.full { grid-column: 1 / -1; }
 
     .field strong {
       display: block;
@@ -210,58 +249,122 @@
       white-space: pre-wrap;
     }
 
+    .risk-panel {
+      border: 1px solid var(--warning-line);
+      border-radius: 8px;
+      background: var(--warning-bg);
+      padding: 14px;
+    }
+
+    .risk-panel.good {
+      border-color: #bbf7d0;
+      background: #f0fdf4;
+    }
+
+    .risk-panel ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .decision-panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafc;
+      padding: 14px;
+    }
+
+    .decision-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    details {
+      margin-top: 24px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--soft);
+      padding: 0;
+    }
+
+    summary {
+      cursor: pointer;
+      padding: 14px;
+      color: #1d4ed8;
+      font-weight: 700;
+    }
+
+    details .details-content {
+      padding: 0 14px 14px;
+    }
+
     ul {
       margin: 0;
       padding-left: 20px;
     }
 
-    li {
-      margin-bottom: 6px;
-    }
+    li { margin-bottom: 6px; }
 
     .empty {
       color: var(--muted);
       font-style: italic;
     }
 
-    @media (max-width: 720px) {
-      .container {
-        padding: 22px 16px;
-      }
+    .toast {
+      display: none;
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%);
+      background: #0f172a;
+      color: #fff;
+      padding: 11px 14px;
+      border-radius: 999px;
+      font-size: 14px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.22);
+      z-index: 10;
+    }
 
-      h1 {
-        font-size: 25px;
-      }
+    .toast.show { display: block; }
 
-      .search,
-      .summary,
-      .grid {
-        grid-template-columns: 1fr;
-      }
+    @media (max-width: 820px) {
+      .container { padding: 22px 16px; }
+      h1 { font-size: 25px; }
+      .search, .summary, .grid, .grid.three { grid-template-columns: 1fr; }
+      button { width: 100%; }
+    }
 
-      button {
-        width: 100%;
-      }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .container { box-shadow: none; max-width: none; border-radius: 0; }
+      .search, .history, .toolbar, .decision-actions, .message, .toast { display: none !important; }
+      .summary { display: grid !important; }
+      .result { display: block !important; }
+      details { break-inside: avoid; }
+      details:not([open]) .details-content { display: block; }
+      summary { list-style: none; }
     }
   </style>
 </head>
 <body>
   <main class="container">
-    <h1>Consulta de CNPJ</h1>
-    <p class="subtitle">Consulta pública usando ReceitaWS, com retorno no mesmo padrão de informações da API.</p>
+    <h1>Ficha Cadastral Comercial</h1>
+    <p class="subtitle">Consulta de CNPJ pelo ReceitaWS com resumo, alertas e decisão interna.</p>
 
     <div class="search">
-      <input id="cnpjInput" type="text" inputmode="numeric" autocomplete="off" maxlength="18" placeholder="Digite o CNPJ" value="">
+      <input id="cnpjInput" type="text" inputmode="numeric" autocomplete="off" maxlength="18" placeholder="Digite o CNPJ">
       <button id="consultarBtn" type="button">Consultar</button>
+    </div>
+
+    <div id="history" class="history">
+      <strong>Últimas consultas</strong>
+      <div id="historyList" class="history-list"></div>
     </div>
 
     <div id="message" class="message"></div>
 
     <section id="summary" class="summary">
-      <div class="summary-card">
-        <strong>Status</strong>
-        <span id="resumoStatus"></span>
-      </div>
       <div class="summary-card">
         <strong>Situação</strong>
         <span id="resumoSituacao"></span>
@@ -271,33 +374,70 @@
         <span id="resumoSimples"></span>
       </div>
       <div class="summary-card">
-        <strong>Última atualização</strong>
+        <strong>Porte</strong>
+        <span id="resumoPorte"></span>
+      </div>
+      <div class="summary-card">
+        <strong>UF</strong>
+        <span id="resumoUf"></span>
+      </div>
+      <div class="summary-card">
+        <strong>Atualização</strong>
         <span id="resumoAtualizacao"></span>
       </div>
     </section>
 
     <section id="result" class="result">
-      <div class="section-title">Dados da empresa</div>
+      <div class="toolbar">
+        <button id="copiarBtn" type="button" class="ghost-button">Copiar resumo</button>
+        <button id="imprimirBtn" type="button" class="ghost-button">Imprimir / PDF</button>
+      </div>
+
+      <div class="section-title">Alertas de risco básico</div>
+      <div id="riskPanel" class="risk-panel">
+        <ul id="riskList"></ul>
+      </div>
+
+      <div class="section-title">Recomendação interna</div>
+      <div class="decision-panel">
+        <div class="grid">
+          <div class="field">
+            <strong>Status comercial</strong>
+            <select id="statusComercial">
+              <option value="Não analisado">Não analisado</option>
+              <option value="Liberado">Liberado</option>
+              <option value="PIX à vista">PIX à vista</option>
+              <option value="Analisar crédito">Analisar crédito</option>
+              <option value="Não vender no prazo">Não vender no prazo</option>
+              <option value="Cadastro incompleto">Cadastro incompleto</option>
+            </select>
+          </div>
+          <div class="field">
+            <strong>Responsável / data</strong>
+            <span id="decisaoAtualizacao">Não informado</span>
+          </div>
+          <div class="field full">
+            <strong>Observações</strong>
+            <textarea id="observacoesCredito" placeholder="Ex.: liberar somente no PIX até consulta de crédito externa."></textarea>
+          </div>
+        </div>
+        <div class="decision-actions">
+          <button id="salvarDecisaoBtn" type="button">Salvar decisão</button>
+        </div>
+      </div>
+
+      <div class="section-title">Dados principais</div>
       <div class="grid">
         <div class="field"><strong>CNPJ</strong><span data-field="cnpj"></span></div>
         <div class="field"><strong>Inscrição Estadual</strong><span id="inscricaoEstadual"></span></div>
-        <div class="field"><strong>Tipo</strong><span data-field="tipo"></span></div>
         <div class="field full"><strong>Nome / Razão social</strong><span data-field="nome"></span></div>
         <div class="field"><strong>Nome fantasia</strong><span data-field="fantasia"></span></div>
+        <div class="field"><strong>Tipo</strong><span data-field="tipo"></span></div>
         <div class="field"><strong>Porte</strong><span data-field="porte"></span></div>
         <div class="field"><strong>Abertura</strong><span data-field="abertura"></span></div>
         <div class="field"><strong>Natureza jurídica</strong><span data-field="natureza_juridica"></span></div>
         <div class="field"><strong>Capital social</strong><span data-field="capital_social"></span></div>
-      </div>
-
-      <div class="section-title">Situação cadastral</div>
-      <div class="grid">
         <div class="field"><strong>Situação</strong><span data-field="situacao"></span></div>
-        <div class="field"><strong>Data da situação</strong><span data-field="data_situacao"></span></div>
-        <div class="field"><strong>Motivo da situação</strong><span data-field="motivo_situacao"></span></div>
-        <div class="field"><strong>EFR</strong><span data-field="efr"></span></div>
-        <div class="field"><strong>Situação especial</strong><span data-field="situacao_especial"></span></div>
-        <div class="field"><strong>Data situação especial</strong><span data-field="data_situacao_especial"></span></div>
       </div>
 
       <div class="section-title">Endereço e contato</div>
@@ -313,16 +453,16 @@
         <div class="field full"><strong>E-mail</strong><span data-field="email"></span></div>
       </div>
 
-      <div class="section-title">Atividade econômica principal</div>
-      <div class="field full">
-        <strong>Atividade principal</strong>
-        <ul id="atividadePrincipal"></ul>
-      </div>
-
-      <div class="section-title">Atividades econômicas secundárias</div>
-      <div class="field full">
-        <strong>Atividades secundárias</strong>
-        <ul id="atividadesSecundarias"></ul>
+      <div class="section-title">Atividades</div>
+      <div class="grid">
+        <div class="field full">
+          <strong>Atividade principal</strong>
+          <ul id="atividadePrincipal"></ul>
+        </div>
+        <div class="field full">
+          <strong>Atividades secundárias</strong>
+          <ul id="atividadesSecundarias"></ul>
+        </div>
       </div>
 
       <div class="section-title">Quadro societário</div>
@@ -343,16 +483,27 @@
         <div class="field"><strong>SIMEI - última atualização</strong><span id="simeiAtualizacao"></span></div>
       </div>
 
-      <div class="section-title">Informações técnicas do ReceitaWS</div>
-      <div class="grid">
-        <div class="field"><strong>Status</strong><span data-field="status"></span></div>
-        <div class="field"><strong>Última atualização</strong><span data-field="ultima_atualizacao"></span></div>
-        <div class="field"><strong>Billing - free</strong><span id="billingFree"></span></div>
-        <div class="field"><strong>Billing - database</strong><span id="billingDatabase"></span></div>
-        <div class="field full"><strong>Extra</strong><span id="extra"></span></div>
-      </div>
+      <details>
+        <summary>Dados técnicos do ReceitaWS</summary>
+        <div class="details-content">
+          <div class="grid">
+            <div class="field"><strong>Status</strong><span data-field="status"></span></div>
+            <div class="field"><strong>Última atualização</strong><span data-field="ultima_atualizacao"></span></div>
+            <div class="field"><strong>Data da situação</strong><span data-field="data_situacao"></span></div>
+            <div class="field"><strong>Motivo da situação</strong><span data-field="motivo_situacao"></span></div>
+            <div class="field"><strong>EFR</strong><span data-field="efr"></span></div>
+            <div class="field"><strong>Situação especial</strong><span data-field="situacao_especial"></span></div>
+            <div class="field"><strong>Data situação especial</strong><span data-field="data_situacao_especial"></span></div>
+            <div class="field"><strong>Billing - free</strong><span id="billingFree"></span></div>
+            <div class="field"><strong>Billing - database</strong><span id="billingDatabase"></span></div>
+            <div class="field full"><strong>Extra</strong><span id="extra"></span></div>
+          </div>
+        </div>
+      </details>
     </section>
   </main>
+
+  <div id="toast" class="toast"></div>
 
   <script>
     const input = document.getElementById('cnpjInput');
@@ -360,6 +511,17 @@
     const message = document.getElementById('message');
     const result = document.getElementById('result');
     const summary = document.getElementById('summary');
+    const historyBox = document.getElementById('history');
+    const historyList = document.getElementById('historyList');
+    const toast = document.getElementById('toast');
+    const copiarBtn = document.getElementById('copiarBtn');
+    const imprimirBtn = document.getElementById('imprimirBtn');
+    const salvarDecisaoBtn = document.getElementById('salvarDecisaoBtn');
+    const statusComercial = document.getElementById('statusComercial');
+    const observacoesCredito = document.getElementById('observacoesCredito');
+    const decisaoAtualizacao = document.getElementById('decisaoAtualizacao');
+
+    let dadosAtuais = null;
 
     input.addEventListener('input', function () {
       input.value = formatarCnpj(input.value);
@@ -370,6 +532,10 @@
     });
 
     button.addEventListener('click', consultarCnpj);
+    copiarBtn.addEventListener('click', copiarResumo);
+    imprimirBtn.addEventListener('click', function () { window.print(); });
+    salvarDecisaoBtn.addEventListener('click', salvarDecisao);
+    carregarHistorico();
 
     function somenteNumeros(valor) {
       return String(valor || '').replace(/\D/g, '');
@@ -392,10 +558,18 @@
       summary.style.display = 'none';
     }
 
-    function mostrarMensagem(tipo, texto) {
+    function mostrarMensagem(tipo, textoMensagem) {
       message.className = 'message ' + tipo;
-      message.textContent = texto;
+      message.textContent = textoMensagem;
       message.style.display = 'block';
+    }
+
+    function mostrarToast(textoMensagem) {
+      toast.textContent = textoMensagem;
+      toast.className = 'toast show';
+      window.setTimeout(function () {
+        toast.className = 'toast';
+      }, 2200);
     }
 
     function texto(valor) {
@@ -413,6 +587,14 @@
       return data.toLocaleString('pt-BR');
     }
 
+    function dataBrParaDate(valor) {
+      if (!valor || !String(valor).includes('/')) return null;
+      const partes = String(valor).split('/');
+      if (partes.length !== 3) return null;
+      const data = new Date(Number(partes[2]), Number(partes[1]) - 1, Number(partes[0]));
+      return Number.isNaN(data.getTime()) ? null : data;
+    }
+
     function capitalSocial(valor) {
       if (!valor) return 'Não informado';
       const textoValor = String(valor).trim();
@@ -421,6 +603,12 @@
         : Number(textoValor);
       if (Number.isNaN(numero)) return valor;
       return numero.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function numeroCapital(valor) {
+      if (!valor) return null;
+      const numero = Number(String(valor).trim().replace(',', '.'));
+      return Number.isNaN(numero) ? null : numero;
     }
 
     function obterInscricaoEstadual(dados) {
@@ -515,6 +703,166 @@
       });
     }
 
+    function gerarAlertas(dados) {
+      const alertas = [];
+      const situacao = String(dados.situacao || '').toUpperCase();
+      const abertura = dataBrParaDate(dados.abertura);
+      const capital = numeroCapital(dados.capital_social);
+
+      if (situacao && situacao !== 'ATIVA') alertas.push('Situação cadastral diferente de ATIVA.');
+      if (!dados.telefone) alertas.push('Telefone não informado no cadastro.');
+      if (!dados.email) alertas.push('E-mail não informado no cadastro.');
+      if (!obterInscricaoEstadual(dados)) alertas.push('Inscrição Estadual não veio no retorno. Conferir se a operação exige IE.');
+      if (abertura) {
+        const meses = (new Date() - abertura) / (1000 * 60 * 60 * 24 * 30.44);
+        if (meses < 12) alertas.push('Empresa com menos de 12 meses de abertura.');
+      }
+      if (capital !== null && capital < 10000) alertas.push('Capital social abaixo de R$ 10.000,00.');
+      if (!dados.atividade_principal || !dados.atividade_principal.length) alertas.push('Atividade principal não informada.');
+
+      if (!alertas.length) alertas.push('Nenhum alerta básico identificado pelos dados cadastrais.');
+      return alertas;
+    }
+
+    function preencherAlertas(dados) {
+      const alertas = gerarAlertas(dados);
+      const riskPanel = document.getElementById('riskPanel');
+      const riskList = document.getElementById('riskList');
+      riskList.innerHTML = '';
+      riskPanel.className = alertas.length === 1 && alertas[0].startsWith('Nenhum') ? 'risk-panel good' : 'risk-panel';
+
+      alertas.forEach(function (alerta) {
+        const li = document.createElement('li');
+        li.textContent = alerta;
+        riskList.appendChild(li);
+      });
+    }
+
+    function resumoTexto(dados) {
+      const principal = dados.atividade_principal && dados.atividade_principal[0]
+        ? [dados.atividade_principal[0].code, dados.atividade_principal[0].text].filter(Boolean).join(' - ')
+        : 'Não informado';
+      const simples = dados.simples || {};
+      const status = localStorage.getItem(chaveDecisao(somenteNumeros(dados.cnpj)));
+      const decisao = status ? JSON.parse(status) : {};
+
+      return [
+        'Ficha cadastral comercial',
+        'Razão social: ' + texto(dados.nome),
+        'Nome fantasia: ' + texto(dados.fantasia),
+        'CNPJ: ' + texto(dados.cnpj),
+        'Inscrição Estadual: ' + texto(obterInscricaoEstadual(dados)),
+        'Situação: ' + texto(dados.situacao),
+        'Abertura: ' + texto(dados.abertura),
+        'Porte: ' + texto(dados.porte),
+        'Simples Nacional: ' + texto(simples.optante),
+        'Endereço: ' + [dados.logradouro, dados.numero, dados.bairro, dados.municipio, dados.uf, dados.cep].filter(Boolean).join(', '),
+        'Telefone: ' + texto(dados.telefone),
+        'E-mail: ' + texto(dados.email),
+        'Atividade principal: ' + principal,
+        'Status comercial: ' + texto(decisao.status || statusComercial.value),
+        'Observações: ' + texto(decisao.observacoes || observacoesCredito.value)
+      ].join('\n');
+    }
+
+    async function copiarResumo() {
+      if (!dadosAtuais) return;
+      const resumo = resumoTexto(dadosAtuais);
+
+      try {
+        await navigator.clipboard.writeText(resumo);
+        mostrarToast('Resumo copiado.');
+      } catch (erro) {
+        const area = document.createElement('textarea');
+        area.value = resumo;
+        document.body.appendChild(area);
+        area.select();
+        document.execCommand('copy');
+        document.body.removeChild(area);
+        mostrarToast('Resumo copiado.');
+      }
+    }
+
+    function chaveDecisao(cnpj) {
+      return 'decisaoComercial_' + somenteNumeros(cnpj);
+    }
+
+    function carregarDecisao(cnpj) {
+      const salvo = localStorage.getItem(chaveDecisao(cnpj));
+      if (!salvo) {
+        statusComercial.value = 'Não analisado';
+        observacoesCredito.value = '';
+        decisaoAtualizacao.textContent = 'Não informado';
+        return;
+      }
+
+      const decisao = JSON.parse(salvo);
+      statusComercial.value = decisao.status || 'Não analisado';
+      observacoesCredito.value = decisao.observacoes || '';
+      decisaoAtualizacao.textContent = decisao.atualizadoEm || 'Não informado';
+    }
+
+    function salvarDecisao() {
+      if (!dadosAtuais) return;
+      const cnpj = somenteNumeros(dadosAtuais.cnpj);
+      const atualizadoEm = new Date().toLocaleString('pt-BR');
+      const decisao = {
+        status: statusComercial.value,
+        observacoes: observacoesCredito.value.trim(),
+        atualizadoEm: atualizadoEm
+      };
+
+      localStorage.setItem(chaveDecisao(cnpj), JSON.stringify(decisao));
+      decisaoAtualizacao.textContent = atualizadoEm;
+      mostrarToast('Decisão salva neste navegador.');
+    }
+
+    function chaveHistorico() {
+      return 'historicoCnpjReceitaWs';
+    }
+
+    function obterHistorico() {
+      try {
+        return JSON.parse(localStorage.getItem(chaveHistorico())) || [];
+      } catch (erro) {
+        return [];
+      }
+    }
+
+    function salvarNoHistorico(dados) {
+      const cnpj = somenteNumeros(dados.cnpj);
+      const item = {
+        cnpj: cnpj,
+        nome: dados.nome || dados.fantasia || cnpj,
+        data: new Date().toISOString()
+      };
+      const historico = obterHistorico().filter(function (registro) {
+        return registro.cnpj !== cnpj;
+      });
+
+      historico.unshift(item);
+      localStorage.setItem(chaveHistorico(), JSON.stringify(historico.slice(0, 8)));
+      carregarHistorico();
+    }
+
+    function carregarHistorico() {
+      const historico = obterHistorico();
+      historyList.innerHTML = '';
+      historyBox.style.display = historico.length ? 'block' : 'none';
+
+      historico.forEach(function (registro) {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'history-chip';
+        chip.textContent = formatarCnpj(registro.cnpj) + ' - ' + String(registro.nome).slice(0, 28);
+        chip.addEventListener('click', function () {
+          input.value = formatarCnpj(registro.cnpj);
+          consultarCnpj();
+        });
+        historyList.appendChild(chip);
+      });
+    }
+
     async function consultarCnpj() {
       const cnpj = somenteNumeros(input.value);
       limparTela();
@@ -533,6 +881,8 @@
         if (!dados || dados.status === 'ERROR') {
           throw new Error(dados && dados.message ? dados.message : 'CNPJ não encontrado no ReceitaWS.');
         }
+
+        dadosAtuais = dados;
 
         const campos = [
           'abertura',
@@ -588,11 +938,17 @@
           ? JSON.stringify(dados.extra, null, 2)
           : 'Não informado';
 
-        document.getElementById('resumoStatus').textContent = texto(dados.status);
-        document.getElementById('resumoStatus').className = dados.status === 'OK' ? 'ok' : '';
-        document.getElementById('resumoSituacao').textContent = texto(dados.situacao);
+        const resumoSituacao = document.getElementById('resumoSituacao');
+        resumoSituacao.textContent = texto(dados.situacao);
+        resumoSituacao.className = String(dados.situacao || '').toUpperCase() === 'ATIVA' ? 'ok' : 'bad';
         document.getElementById('resumoSimples').textContent = texto(simples.optante);
+        document.getElementById('resumoPorte').textContent = texto(dados.porte);
+        document.getElementById('resumoUf').textContent = texto(dados.uf);
         document.getElementById('resumoAtualizacao').textContent = dataHora(dados.ultima_atualizacao);
+
+        preencherAlertas(dados);
+        carregarDecisao(cnpj);
+        salvarNoHistorico(dados);
 
         message.style.display = 'none';
         summary.style.display = 'grid';
