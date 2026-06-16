@@ -136,6 +136,30 @@
       border: 1px solid #bfdbfe;
     }
 
+    .sync-panel {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafc;
+      padding: 12px;
+      margin-bottom: 16px;
+    }
+
+    .sync-panel strong {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .sync-panel span {
+      font-weight: 700;
+    }
+
     .history {
       display: none;
       margin-bottom: 18px;
@@ -332,13 +356,14 @@
       .container { padding: 22px 16px; }
       h1 { font-size: 25px; }
       .search, .summary, .grid, .grid.three { grid-template-columns: 1fr; }
+      .sync-panel { align-items: stretch; flex-direction: column; }
       button { width: 100%; }
     }
 
     @media print {
       body { background: #fff; padding: 0; }
       .container { box-shadow: none; max-width: none; border-radius: 0; }
-      .search, .history, .toolbar, .decision-actions, .message, .toast { display: none !important; }
+      .search, .sync-panel, .history, .toolbar, .decision-actions, .message, .toast { display: none !important; }
       .summary { display: grid !important; }
       .result { display: block !important; }
       details { break-inside: avoid; }
@@ -355,6 +380,14 @@
     <div class="search">
       <input id="cnpjInput" type="text" inputmode="numeric" autocomplete="off" maxlength="18" placeholder="Digite o CNPJ">
       <button id="consultarBtn" type="button">Consultar</button>
+    </div>
+
+    <div class="sync-panel">
+      <div>
+        <strong>Sincronização</strong>
+        <span id="firebaseStatus">Firebase não configurado. Salvando apenas neste dispositivo.</span>
+      </div>
+      <button id="testarFirebaseBtn" type="button" class="ghost-button">Testar Firebase</button>
     </div>
 
     <div id="history" class="history">
@@ -517,11 +550,25 @@
     const copiarBtn = document.getElementById('copiarBtn');
     const imprimirBtn = document.getElementById('imprimirBtn');
     const salvarDecisaoBtn = document.getElementById('salvarDecisaoBtn');
+    const testarFirebaseBtn = document.getElementById('testarFirebaseBtn');
+    const firebaseStatus = document.getElementById('firebaseStatus');
     const statusComercial = document.getElementById('statusComercial');
     const observacoesCredito = document.getElementById('observacoesCredito');
     const decisaoAtualizacao = document.getElementById('decisaoAtualizacao');
 
     let dadosAtuais = null;
+    let firebaseDb = null;
+    let firebaseApi = null;
+    let firebasePronto = false;
+
+    const firebaseConfig = {
+      apiKey: '',
+      authDomain: '',
+      projectId: '',
+      storageBucket: '',
+      messagingSenderId: '',
+      appId: ''
+    };
 
     input.addEventListener('input', function () {
       input.value = formatarCnpj(input.value);
@@ -535,7 +582,53 @@
     copiarBtn.addEventListener('click', copiarResumo);
     imprimirBtn.addEventListener('click', function () { window.print(); });
     salvarDecisaoBtn.addEventListener('click', salvarDecisao);
+    testarFirebaseBtn.addEventListener('click', testarFirebase);
+    iniciarFirebase();
     carregarHistorico();
+
+    function firebaseConfigurado() {
+      return Boolean(firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId);
+    }
+
+    async function iniciarFirebase() {
+      if (!firebaseConfigurado()) {
+        firebaseStatus.textContent = 'Firebase não configurado. Salvando apenas neste dispositivo.';
+        return;
+      }
+
+      try {
+        const appModule = await import('https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js');
+        const firestoreModule = await import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js');
+        const app = appModule.initializeApp(firebaseConfig);
+
+        firebaseDb = firestoreModule.getFirestore(app);
+        firebaseApi = firestoreModule;
+        firebasePronto = true;
+        firebaseStatus.textContent = 'Firebase conectado. Decisões e histórico podem sincronizar entre dispositivos.';
+        await carregarHistorico();
+      } catch (erro) {
+        firebaseStatus.textContent = 'Não foi possível conectar ao Firebase. Conferir configuração e regras.';
+        console.error(erro);
+      }
+    }
+
+    async function testarFirebase() {
+      if (!firebasePronto) {
+        mostrarToast(firebaseConfigurado() ? 'Firebase ainda não conectou.' : 'Cole o firebaseConfig no arquivo para testar.');
+        return;
+      }
+
+      try {
+        await firebaseApi.setDoc(firebaseApi.doc(firebaseDb, 'testes', 'conexao'), {
+          mensagem: 'Teste gravado com sucesso',
+          atualizadoEm: new Date().toISOString()
+        }, { merge: true });
+        mostrarToast('Teste gravado no Firebase.');
+      } catch (erro) {
+        console.error(erro);
+        mostrarToast('Falha ao gravar. Conferir regras do Firestore.');
+      }
+    }
 
     function somenteNumeros(valor) {
       return String(valor || '').replace(/\D/g, '');
@@ -787,22 +880,37 @@
       return 'decisaoComercial_' + somenteNumeros(cnpj);
     }
 
-    function carregarDecisao(cnpj) {
+    async function carregarDecisao(cnpj) {
       const salvo = localStorage.getItem(chaveDecisao(cnpj));
       if (!salvo) {
         statusComercial.value = 'Não analisado';
         observacoesCredito.value = '';
         decisaoAtualizacao.textContent = 'Não informado';
-        return;
+      } else {
+        const decisao = JSON.parse(salvo);
+        statusComercial.value = decisao.status || 'Não analisado';
+        observacoesCredito.value = decisao.observacoes || '';
+        decisaoAtualizacao.textContent = decisao.atualizadoEm || 'Não informado';
       }
 
-      const decisao = JSON.parse(salvo);
-      statusComercial.value = decisao.status || 'Não analisado';
-      observacoesCredito.value = decisao.observacoes || '';
-      decisaoAtualizacao.textContent = decisao.atualizadoEm || 'Não informado';
+      if (!firebasePronto) return;
+
+      try {
+        const docRef = firebaseApi.doc(firebaseDb, 'fichas_cnpj', cnpj);
+        const registro = await firebaseApi.getDoc(docRef);
+        if (!registro.exists() || !registro.data().decisao) return;
+
+        const decisaoFirebase = registro.data().decisao;
+        statusComercial.value = decisaoFirebase.status || 'Não analisado';
+        observacoesCredito.value = decisaoFirebase.observacoes || '';
+        decisaoAtualizacao.textContent = decisaoFirebase.atualizadoEm || 'Não informado';
+        localStorage.setItem(chaveDecisao(cnpj), JSON.stringify(decisaoFirebase));
+      } catch (erro) {
+        console.error(erro);
+      }
     }
 
-    function salvarDecisao() {
+    async function salvarDecisao() {
       if (!dadosAtuais) return;
       const cnpj = somenteNumeros(dadosAtuais.cnpj);
       const atualizadoEm = new Date().toLocaleString('pt-BR');
@@ -814,7 +922,8 @@
 
       localStorage.setItem(chaveDecisao(cnpj), JSON.stringify(decisao));
       decisaoAtualizacao.textContent = atualizadoEm;
-      mostrarToast('Decisão salva neste navegador.');
+      await salvarFichaFirebase(dadosAtuais, decisao);
+      mostrarToast(firebasePronto ? 'Decisão salva e sincronizada.' : 'Decisão salva neste navegador.');
     }
 
     function chaveHistorico() {
@@ -829,7 +938,7 @@
       }
     }
 
-    function salvarNoHistorico(dados) {
+    async function salvarNoHistorico(dados) {
       const cnpj = somenteNumeros(dados.cnpj);
       const item = {
         cnpj: cnpj,
@@ -842,11 +951,35 @@
 
       historico.unshift(item);
       localStorage.setItem(chaveHistorico(), JSON.stringify(historico.slice(0, 8)));
-      carregarHistorico();
+      await salvarFichaFirebase(dados);
+      await carregarHistorico();
     }
 
-    function carregarHistorico() {
-      const historico = obterHistorico();
+    async function carregarHistorico() {
+      let historico = obterHistorico();
+
+      if (firebasePronto) {
+        try {
+          const consulta = firebaseApi.query(
+            firebaseApi.collection(firebaseDb, 'fichas_cnpj'),
+            firebaseApi.orderBy('ultimaConsultaMs', 'desc'),
+            firebaseApi.limit(8)
+          );
+          const resultado = await firebaseApi.getDocs(consulta);
+          historico = resultado.docs.map(function (documento) {
+            const dados = documento.data();
+            return {
+              cnpj: dados.cnpj || documento.id,
+              nome: dados.nome || dados.fantasia || documento.id,
+              data: dados.ultimaConsulta || ''
+            };
+          });
+          localStorage.setItem(chaveHistorico(), JSON.stringify(historico));
+        } catch (erro) {
+          console.error(erro);
+        }
+      }
+
       historyList.innerHTML = '';
       historyBox.style.display = historico.length ? 'block' : 'none';
 
@@ -861,6 +994,44 @@
         });
         historyList.appendChild(chip);
       });
+    }
+
+    async function salvarFichaFirebase(dados, decisaoManual) {
+      if (!firebasePronto || !dados) return;
+
+      const cnpj = somenteNumeros(dados.cnpj);
+      let decisao = decisaoManual;
+      if (!decisao) {
+        try {
+          decisao = JSON.parse(localStorage.getItem(chaveDecisao(cnpj))) || null;
+        } catch (erro) {
+          decisao = null;
+        }
+      }
+
+      const payload = {
+        cnpj: cnpj,
+        cnpjFormatado: dados.cnpj || formatarCnpj(cnpj),
+        nome: dados.nome || '',
+        fantasia: dados.fantasia || '',
+        situacao: dados.situacao || '',
+        uf: dados.uf || '',
+        municipio: dados.municipio || '',
+        porte: dados.porte || '',
+        telefone: dados.telefone || '',
+        email: dados.email || '',
+        ultimaConsulta: new Date().toISOString(),
+        ultimaConsultaMs: Date.now()
+      };
+
+      if (decisao) payload.decisao = decisao;
+
+      try {
+        await firebaseApi.setDoc(firebaseApi.doc(firebaseDb, 'fichas_cnpj', cnpj), payload, { merge: true });
+      } catch (erro) {
+        console.error(erro);
+        mostrarToast('Não foi possível sincronizar no Firebase.');
+      }
     }
 
     async function consultarCnpj() {
@@ -947,8 +1118,8 @@
         document.getElementById('resumoAtualizacao').textContent = dataHora(dados.ultima_atualizacao);
 
         preencherAlertas(dados);
-        carregarDecisao(cnpj);
-        salvarNoHistorico(dados);
+        await carregarDecisao(cnpj);
+        await salvarNoHistorico(dados);
 
         message.style.display = 'none';
         summary.style.display = 'grid';
