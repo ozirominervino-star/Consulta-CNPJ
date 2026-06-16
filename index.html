@@ -606,7 +606,7 @@
         firebaseApi = firestoreModule;
         firebasePronto = true;
         firebaseStatus.textContent = 'Firebase conectado. Decisões e histórico podem sincronizar entre dispositivos.';
-        await carregarHistorico();
+        carregarHistorico();
       } catch (erro) {
         firebaseStatus.textContent = 'Não foi possível conectar ao Firebase. Conferir configuração e regras.';
         console.error(erro);
@@ -664,6 +664,12 @@
       window.setTimeout(function () {
         toast.className = 'toast';
       }, 2200);
+    }
+
+    function executarEmSegundoPlano(tarefa) {
+      Promise.resolve(tarefa).catch(function (erro) {
+        console.error(erro);
+      });
     }
 
     function texto(valor) {
@@ -911,7 +917,7 @@
       }
     }
 
-    async function salvarDecisao() {
+    function salvarDecisao() {
       if (!dadosAtuais) return;
       const cnpj = somenteNumeros(dadosAtuais.cnpj);
       const atualizadoEm = new Date().toLocaleString('pt-BR');
@@ -923,8 +929,8 @@
 
       localStorage.setItem(chaveDecisao(cnpj), JSON.stringify(decisao));
       decisaoAtualizacao.textContent = atualizadoEm;
-      await salvarFichaFirebase(dadosAtuais, decisao);
-      mostrarToast(firebasePronto ? 'Decisão salva e sincronizada.' : 'Decisão salva neste navegador.');
+      mostrarToast(firebasePronto ? 'Decisão salva. Sincronizando...' : 'Decisão salva neste navegador.');
+      executarEmSegundoPlano(salvarFichaFirebase(dadosAtuais, decisao));
     }
 
     function chaveHistorico() {
@@ -939,7 +945,7 @@
       }
     }
 
-    async function salvarNoHistorico(dados) {
+    function salvarNoHistorico(dados) {
       const cnpj = somenteNumeros(dados.cnpj);
       const item = {
         cnpj: cnpj,
@@ -952,8 +958,12 @@
 
       historico.unshift(item);
       localStorage.setItem(chaveHistorico(), JSON.stringify(historico.slice(0, 8)));
-      await salvarFichaFirebase(dados);
-      await carregarHistorico();
+      carregarHistorico();
+      executarEmSegundoPlano(
+        salvarFichaFirebase(dados).then(function () {
+          return carregarHistorico();
+        })
+      );
     }
 
     async function carregarHistorico() {
@@ -1118,13 +1128,13 @@
         document.getElementById('resumoUf').textContent = texto(dados.uf);
         document.getElementById('resumoAtualizacao').textContent = dataHora(dados.ultima_atualizacao);
 
-        preencherAlertas(dados);
-        await carregarDecisao(cnpj);
-        await salvarNoHistorico(dados);
-
         message.style.display = 'none';
         summary.style.display = 'grid';
         result.style.display = 'block';
+
+        preencherAlertas(dados);
+        carregarDecisao(cnpj);
+        salvarNoHistorico(dados);
       } catch (erro) {
         mostrarMensagem('error', erro.message);
       } finally {
