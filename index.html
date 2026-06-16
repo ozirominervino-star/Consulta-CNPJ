@@ -562,12 +562,13 @@
     let firebasePronto = false;
 
     const firebaseConfig = {
-      apiKey: '',
-      authDomain: '',
-      projectId: '',
-      storageBucket: '',
-      messagingSenderId: '',
-      appId: ''
+      apiKey: 'AIzaSyBkXU9NCLdNXiCMLDEymoJwj0enrxxBIxc',
+      authDomain: 'consulta-cnpj-4a11d.firebaseapp.com',
+      projectId: 'consulta-cnpj-4a11d',
+      storageBucket: 'consulta-cnpj-4a11d.firebasestorage.app',
+      messagingSenderId: '1035099402108',
+      appId: '1:1035099402108:web:66afadddd918550831fef9',
+      measurementId: 'G-2R97SNB7VC'
     };
 
     input.addEventListener('input', function () {
@@ -597,8 +598,8 @@
       }
 
       try {
-        const appModule = await import('https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js');
-        const firestoreModule = await import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js');
+        const appModule = await import('https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js');
+        const firestoreModule = await import('https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js');
         const app = appModule.initializeApp(firebaseConfig);
 
         firebaseDb = firestoreModule.getFirestore(app);
