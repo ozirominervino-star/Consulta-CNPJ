@@ -36,7 +36,9 @@ O app já está com o `firebaseConfig` preenchido no arquivo `index.html`.
 
 1. Verifique se o Cloud Firestore está ativo no Firebase.
 2. Abra o app e clique em `Testar Firebase`.
-3. Se o teste gravar corretamente, use `Sincronizar histórico` no dispositivo onde as consultas antigas aparecem.
-4. No outro dispositivo/usuário, clique em `Consultar histórico`.
+3. O teste agora precisa gravar e ler. Se falhar, o app mostra o diagnóstico do Firebase na tela.
+4. Se precisar testar regras abertas temporariamente, clique em `Copiar regras de teste` e cole nas regras do Cloud Firestore.
+5. Se o teste gravar corretamente, use `Sincronizar histórico` no dispositivo onde as consultas antigas aparecem.
+6. No outro dispositivo/usuário, clique em `Consultar histórico`.
 
 Para teste inicial, as regras do Firestore precisam permitir leitura e gravação. Em produção, use autenticação e regras restritas.

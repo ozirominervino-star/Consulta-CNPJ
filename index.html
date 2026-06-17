@@ -162,6 +162,33 @@
       font-weight: 700;
     }
 
+    .firebase-diagnostics {
+      display: none;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      background: #fef2f2;
+      color: #7f1d1d;
+      padding: 12px;
+      margin: -4px 0 16px;
+      font-size: 14px;
+    }
+
+    .firebase-diagnostics strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .firebase-diagnostics code {
+      display: block;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      background: #fff;
+      border: 1px solid #fecaca;
+      border-radius: 6px;
+      padding: 8px;
+      margin-top: 8px;
+    }
+
     .history {
       display: none;
       margin-bottom: 18px;
@@ -422,7 +449,7 @@
     @media print {
       body { background: #fff; padding: 0; }
       .container { box-shadow: none; max-width: none; border-radius: 0; }
-      .search, .sync-panel, .history-tools, .history-manager, .history, .toolbar, .decision-actions, .message, .toast { display: none !important; }
+      .search, .sync-panel, .firebase-diagnostics, .history-tools, .history-manager, .history, .toolbar, .decision-actions, .message, .toast { display: none !important; }
       .summary { display: grid !important; }
       .result { display: block !important; }
       details { break-inside: avoid; }
@@ -452,6 +479,13 @@
         <span id="firebaseStatus">Firebase não configurado. Salvando apenas neste dispositivo.</span>
       </div>
       <button id="testarFirebaseBtn" type="button" class="ghost-button">Testar Firebase</button>
+      <button id="copiarRegrasFirebaseBtn" type="button" class="ghost-button">Copiar regras de teste</button>
+    </div>
+
+    <div id="firebaseDiagnostics" class="firebase-diagnostics">
+      <strong>Diagnóstico do Firebase</strong>
+      <span id="firebaseDiagnosticsText"></span>
+      <code id="firebaseDiagnosticsCode"></code>
     </div>
 
     <div id="historyManager" class="history-manager">
@@ -646,7 +680,11 @@
     const imprimirBtn = document.getElementById('imprimirBtn');
     const salvarDecisaoBtn = document.getElementById('salvarDecisaoBtn');
     const testarFirebaseBtn = document.getElementById('testarFirebaseBtn');
+    const copiarRegrasFirebaseBtn = document.getElementById('copiarRegrasFirebaseBtn');
     const firebaseStatus = document.getElementById('firebaseStatus');
+    const firebaseDiagnostics = document.getElementById('firebaseDiagnostics');
+    const firebaseDiagnosticsText = document.getElementById('firebaseDiagnosticsText');
+    const firebaseDiagnosticsCode = document.getElementById('firebaseDiagnosticsCode');
     const statusComercial = document.getElementById('statusComercial');
     const observacoesCredito = document.getElementById('observacoesCredito');
     const decisaoAtualizacao = document.getElementById('decisaoAtualizacao');
@@ -692,6 +730,7 @@
     imprimirBtn.addEventListener('click', function () { window.print(); });
     salvarDecisaoBtn.addEventListener('click', salvarDecisao);
     testarFirebaseBtn.addEventListener('click', testarFirebase);
+    copiarRegrasFirebaseBtn.addEventListener('click', copiarRegrasFirebase);
     iniciarFirebase();
     carregarHistorico();
 
@@ -718,6 +757,7 @@
         sincronizarHistoricoFirebase(false);
       } catch (erro) {
         firebaseStatus.textContent = 'Não foi possível conectar ao Firebase. Conferir configuração e regras.';
+        mostrarErroFirebase('Falha ao carregar/conectar o Firebase.', erro);
         console.error(erro);
       }
     }
@@ -746,15 +786,56 @@
       }
 
       try {
-        await firebaseApi.setDoc(firebaseApi.doc(firebaseDb, 'testes', 'conexao'), {
+        const testeRef = firebaseApi.doc(firebaseDb, 'testes', 'conexao');
+        await firebaseApi.setDoc(testeRef, {
           mensagem: 'Teste gravado com sucesso',
           atualizadoEm: new Date().toISOString()
         }, { merge: true });
-        mostrarToast('Teste gravado no Firebase.');
+
+        const leitura = await firebaseApi.getDoc(testeRef);
+        if (!leitura.exists()) throw new Error('Gravou, mas não conseguiu ler o documento de teste.');
+
+        firebaseDiagnostics.style.display = 'none';
+        firebaseStatus.textContent = 'Firebase OK: gravação e leitura funcionando.';
+        mostrarToast('Firebase OK: gravou e leu.');
       } catch (erro) {
         console.error(erro);
-        mostrarToast('Falha ao gravar. Conferir regras do Firestore.');
+        mostrarErroFirebase('Falha no teste de gravação/leitura. Normalmente é regra do Firestore.', erro);
+        mostrarToast('Falha no Firebase. Veja o diagnóstico.');
       }
+    }
+
+    function erroFirebaseTexto(erro) {
+      const partes = [];
+      if (erro && erro.code) partes.push('Código: ' + erro.code);
+      if (erro && erro.message) partes.push('Mensagem: ' + erro.message);
+      if (!partes.length) partes.push(String(erro || 'Erro desconhecido'));
+      return partes.join('\n');
+    }
+
+    function mostrarErroFirebase(titulo, erro) {
+      firebaseDiagnostics.style.display = 'block';
+      firebaseDiagnosticsText.textContent = titulo;
+      firebaseDiagnosticsCode.textContent = erroFirebaseTexto(erro);
+      firebaseStatus.textContent = titulo;
+    }
+
+    function regrasFirebaseTeste() {
+      return `rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /fichas_cnpj/{document=**} {
+      allow read, write: if true;
+    }
+    match /testes/{document=**} {
+      allow read, write: if true;
+    }
+  }
+}`;
+    }
+
+    function copiarRegrasFirebase() {
+      copiarTexto(regrasFirebaseTeste(), 'Regras de teste copiadas.');
     }
 
     function somenteNumeros(valor) {
