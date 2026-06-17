@@ -1,11 +1,13 @@
-# Ficha Cadastral Comercial - CNPJ
+# Consulta CNPJ + Sintegra
 
-Aplicativo de página única para consultar CNPJ usando a API pública do ReceitaWS e transformar o retorno em uma ficha comercial.
+Aplicativo de página única para consultar CNPJ usando a API pública do ReceitaWS e, se o CNPJ existir, usar a UF retornada para abrir a consulta estadual do Sintegra.
 
 ## Recursos
 
 - Consulta pelo ReceitaWS via JSONP, compatível com uso direto no navegador.
 - Resumo no topo com situação cadastral, Simples Nacional, porte, UF e última atualização.
+- Etapa Sintegra: confirma o CNPJ, identifica a UF e abre a consulta estadual correspondente quando houver link direto confiável.
+- Botão para copiar o CNPJ sem pontuação para colar no Sintegra.
 - Campo de Inscrição Estadual quando a informação vier disponível no retorno.
 - Alertas básicos de risco cadastral, como empresa não ativa, cadastro recente, ausência de telefone/e-mail e capital social baixo.
 - Recomendação interna salva no navegador: liberado, PIX à vista, analisar crédito, não vender no prazo ou cadastro incompleto.
@@ -17,7 +19,7 @@ Aplicativo de página única para consultar CNPJ usando a API pública do Receit
 
 ## Como usar
 
-Abra o arquivo `index.html`, digite o CNPJ e clique em `Consultar`.
+Abra o arquivo `index.html`, digite o CNPJ e clique em `Consultar`. Se o CNPJ existir, use o botão `Abrir Sintegra da UF` e cole o CNPJ quando o portal estadual solicitar.
 
 Observação: a API pública do ReceitaWS tem limite de consultas por minuto e pode retornar dados de cache.
 

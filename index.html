@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ficha Cadastral Comercial - CNPJ</title>
+  <title>Consulta CNPJ + Sintegra</title>
   <link rel="icon" type="image/png" href="image_b77415.png">
   <link rel="shortcut icon" type="image/png" href="image_b77415.png">
   <style>
@@ -21,6 +21,8 @@
       --warning: #b45309;
       --warning-bg: #fff7ed;
       --warning-line: #fed7aa;
+      --sintegra-bg: #eff6ff;
+      --sintegra-line: #bfdbfe;
     }
 
     * { box-sizing: border-box; }
@@ -233,6 +235,25 @@
       margin-bottom: 20px;
     }
 
+    .sintegra-panel {
+      border: 1px solid var(--sintegra-line);
+      border-radius: 8px;
+      background: var(--sintegra-bg);
+      padding: 14px;
+    }
+
+    .sintegra-panel p {
+      margin: 0 0 12px;
+      color: #1e3a8a;
+      font-weight: 700;
+    }
+
+    .sintegra-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
     .section-title {
       margin: 26px 0 10px;
       padding-bottom: 7px;
@@ -374,8 +395,8 @@
 </head>
 <body>
   <main class="container">
-    <h1>Ficha Cadastral Comercial</h1>
-    <p class="subtitle">Consulta de CNPJ pelo ReceitaWS com resumo, alertas e decisão interna.</p>
+    <h1>Consulta CNPJ + Sintegra</h1>
+    <p class="subtitle">Primeiro confirma a existência do CNPJ na ReceitaWS; depois usa a UF encontrada para abrir o Sintegra correto.</p>
 
     <div class="search">
       <input id="cnpjInput" type="text" inputmode="numeric" autocomplete="off" maxlength="18" placeholder="Digite o CNPJ">
@@ -422,8 +443,18 @@
 
     <section id="result" class="result">
       <div class="toolbar">
-        <button id="copiarBtn" type="button" class="ghost-button">Copiar resumo</button>
+        <button id="copiarCnpjBtn" type="button" class="ghost-button">Copiar CNPJ</button>
+        <button id="copiarBtn" type="button" class="ghost-button">Copiar ficha</button>
         <button id="imprimirBtn" type="button" class="ghost-button">Imprimir / PDF</button>
+      </div>
+
+      <div class="section-title">Consulta Sintegra</div>
+      <div class="sintegra-panel">
+        <p id="sintegraStatus">Após confirmar o CNPJ na Receita, abra a consulta estadual do Sintegra.</p>
+        <div class="sintegra-actions">
+          <button id="abrirSintegraBtn" type="button">Abrir Sintegra da UF</button>
+          <button id="copiarCnpjSintegraBtn" type="button" class="ghost-button">Copiar CNPJ para colar no Sintegra</button>
+        </div>
       </div>
 
       <div class="section-title">Alertas de risco básico</div>
@@ -548,6 +579,10 @@
     const historyList = document.getElementById('historyList');
     const toast = document.getElementById('toast');
     const copiarBtn = document.getElementById('copiarBtn');
+    const copiarCnpjBtn = document.getElementById('copiarCnpjBtn');
+    const copiarCnpjSintegraBtn = document.getElementById('copiarCnpjSintegraBtn');
+    const abrirSintegraBtn = document.getElementById('abrirSintegraBtn');
+    const sintegraStatus = document.getElementById('sintegraStatus');
     const imprimirBtn = document.getElementById('imprimirBtn');
     const salvarDecisaoBtn = document.getElementById('salvarDecisaoBtn');
     const testarFirebaseBtn = document.getElementById('testarFirebaseBtn');
@@ -581,6 +616,9 @@
 
     button.addEventListener('click', consultarCnpj);
     copiarBtn.addEventListener('click', copiarResumo);
+    copiarCnpjBtn.addEventListener('click', copiarCnpjAtual);
+    copiarCnpjSintegraBtn.addEventListener('click', copiarCnpjAtual);
+    abrirSintegraBtn.addEventListener('click', abrirSintegraAtual);
     imprimirBtn.addEventListener('click', function () { window.print(); });
     salvarDecisaoBtn.addEventListener('click', salvarDecisao);
     testarFirebaseBtn.addEventListener('click', testarFirebase);
@@ -883,6 +921,76 @@
       }
     }
 
+    async function copiarTexto(textoCopiar, mensagem) {
+      try {
+        await navigator.clipboard.writeText(textoCopiar);
+      } catch (erro) {
+        const area = document.createElement('textarea');
+        area.value = textoCopiar;
+        document.body.appendChild(area);
+        area.select();
+        document.execCommand('copy');
+        document.body.removeChild(area);
+      }
+      mostrarToast(mensagem);
+    }
+
+    function copiarCnpjAtual() {
+      if (!dadosAtuais) return;
+      copiarTexto(somenteNumeros(dadosAtuais.cnpj), 'CNPJ copiado.');
+    }
+
+    function urlSintegraPorUf(uf) {
+      const urls = {
+        AC: 'https://sefazonline.ac.gov.br/sefazonline/app.wmsintegralista',
+        AM: 'https://www.sefaz.am.gov.br/sintegra/sintegra0.asp',
+        CE: 'https://consultapublica.sefaz.ce.gov.br/sintegra/consultar',
+        MG: 'https://www.fazenda.mg.gov.br/empresas/Cadastro/cadastro/consultapublica.html',
+        PB: 'https://www4.sefaz.pb.gov.br/sintegra',
+        PR: 'https://www.sintegra.fazenda.pr.gov.br/',
+        RR: 'https://portalweb.sefaz.rr.gov.br/sintegra/servlet/wp_siate_consultasintegra',
+        SE: 'https://security.sefaz.se.gov.br/SIC/sintegra/index.jsp',
+        SP: 'https://www.cadesp.fazenda.sp.gov.br/Pages/Cadastro/Consultas/ConsultaPublica/ConsultaPublica.aspx'
+      };
+
+      return urls[String(uf || '').toUpperCase()] || 'https://www.sintegra.gov.br/new_bv.html';
+    }
+
+    function nomeUf(uf) {
+      const nomes = {
+        AC: 'Acre', AL: 'Alagoas', AP: 'Amapá', AM: 'Amazonas', BA: 'Bahia',
+        CE: 'Ceará', DF: 'Distrito Federal', ES: 'Espírito Santo', GO: 'Goiás',
+        MA: 'Maranhão', MT: 'Mato Grosso', MS: 'Mato Grosso do Sul', MG: 'Minas Gerais',
+        PA: 'Pará', PB: 'Paraíba', PR: 'Paraná', PE: 'Pernambuco', PI: 'Piauí',
+        RJ: 'Rio de Janeiro', RN: 'Rio Grande do Norte', RS: 'Rio Grande do Sul',
+        RO: 'Rondônia', RR: 'Roraima', SC: 'Santa Catarina', SP: 'São Paulo',
+        SE: 'Sergipe', TO: 'Tocantins'
+      };
+
+      return nomes[String(uf || '').toUpperCase()] || uf || 'UF não informada';
+    }
+
+    function atualizarSintegra(dados) {
+      const uf = String(dados.uf || '').toUpperCase();
+      const cnpj = somenteNumeros(dados.cnpj);
+      const url = urlSintegraPorUf(uf);
+      const fallback = url.includes('sintegra.gov.br/new_bv');
+
+      sintegraStatus.textContent = fallback
+        ? 'CNPJ confirmado na Receita. UF identificada: ' + nomeUf(uf) + '. Abra o Sintegra nacional e selecione essa UF; depois cole o CNPJ ' + cnpj + '.'
+        : 'CNPJ confirmado na Receita. UF identificada: ' + nomeUf(uf) + '. Abra a consulta estadual e cole o CNPJ ' + cnpj + '.';
+
+      abrirSintegraBtn.textContent = fallback ? 'Abrir Sintegra nacional' : 'Abrir Sintegra ' + uf;
+      abrirSintegraBtn.dataset.url = url;
+    }
+
+    function abrirSintegraAtual() {
+      if (!dadosAtuais) return;
+      const url = abrirSintegraBtn.dataset.url || urlSintegraPorUf(dadosAtuais.uf);
+      copiarCnpjAtual();
+      window.open(url, '_blank', 'noopener');
+    }
+
     function chaveDecisao(cnpj) {
       return 'decisaoComercial_' + somenteNumeros(cnpj);
     }
@@ -1127,6 +1235,7 @@
         document.getElementById('resumoPorte').textContent = texto(dados.porte);
         document.getElementById('resumoUf').textContent = texto(dados.uf);
         document.getElementById('resumoAtualizacao').textContent = dataHora(dados.ultima_atualizacao);
+        atualizarSintegra(dados);
 
         message.style.display = 'none';
         summary.style.display = 'grid';
