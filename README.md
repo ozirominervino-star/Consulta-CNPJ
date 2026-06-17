@@ -1,12 +1,12 @@
 # Consulta CNPJ + Sintegra
 
-Aplicativo de página única para consultar CNPJ usando a API pública do ReceitaWS e, se o CNPJ existir, usar a UF retornada para abrir a consulta estadual do Sintegra.
+Aplicativo de página única para consultar CNPJ usando a API pública do ReceitaWS e, se o CNPJ existir, usar a UF retornada para orientar a consulta no Sintegra oficial.
 
 ## Recursos
 
 - Consulta pelo ReceitaWS via JSONP, compatível com uso direto no navegador.
 - Resumo no topo com situação cadastral, Simples Nacional, porte, UF e última atualização.
-- Etapa Sintegra: confirma o CNPJ, identifica a UF e abre a consulta estadual correspondente quando houver link direto confiável.
+- Etapa Sintegra: confirma o CNPJ, identifica a UF e abre o portal oficial do Sintegra para selecionar o estado correto.
 - Botão para copiar o CNPJ sem pontuação para colar no Sintegra.
 - Registro automático das consultas realizadas.
 - Botão `Consultar histórico` para visualizar os registros salvos.
@@ -24,7 +24,7 @@ Aplicativo de página única para consultar CNPJ usando a API pública do Receit
 
 ## Como usar
 
-Abra o arquivo `index.html`, digite o CNPJ e clique em `Consultar`. Se o CNPJ existir, use o botão `Abrir Sintegra da UF` e cole o CNPJ quando o portal estadual solicitar.
+Abra o arquivo `index.html`, digite o CNPJ e clique em `Consultar`. Se o CNPJ existir, use o botão `Abrir Sintegra oficial`, selecione a UF indicada e cole o CNPJ quando o portal solicitar.
 
 Se consultas antigas não aparecerem em outro dispositivo, abra o app no dispositivo onde elas aparecem e clique em `Sincronizar histórico`.
 

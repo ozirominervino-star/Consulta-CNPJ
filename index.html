@@ -706,8 +706,9 @@
       }
 
       try {
-        const appModule = await import('https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js');
-        const firestoreModule = await import('https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js');
+        const modulos = await carregarFirebaseSdk();
+        const appModule = modulos.appModule;
+        const firestoreModule = modulos.firestoreModule;
         const app = appModule.initializeApp(firebaseConfig);
 
         firebaseDb = firestoreModule.getFirestore(app);
@@ -719,6 +720,23 @@
         firebaseStatus.textContent = 'Não foi possível conectar ao Firebase. Conferir configuração e regras.';
         console.error(erro);
       }
+    }
+
+    async function carregarFirebaseSdk() {
+      const versoes = ['12.14.0', '12.3.0', '10.12.5'];
+      let ultimoErro = null;
+
+      for (const versao of versoes) {
+        try {
+          const appModule = await import('https://www.gstatic.com/firebasejs/' + versao + '/firebase-app.js');
+          const firestoreModule = await import('https://www.gstatic.com/firebasejs/' + versao + '/firebase-firestore.js');
+          return { appModule: appModule, firestoreModule: firestoreModule };
+        } catch (erro) {
+          ultimoErro = erro;
+        }
+      }
+
+      throw ultimoErro || new Error('SDK do Firebase indisponível.');
     }
 
     async function testarFirebase() {
@@ -1011,19 +1029,7 @@
     }
 
     function urlSintegraPorUf(uf) {
-      const urls = {
-        AC: 'https://sefazonline.ac.gov.br/sefazonline/app.wmsintegralista',
-        AM: 'https://www.sefaz.am.gov.br/sintegra/sintegra0.asp',
-        CE: 'https://consultapublica.sefaz.ce.gov.br/sintegra/consultar',
-        MG: 'https://www.fazenda.mg.gov.br/empresas/Cadastro/cadastro/consultapublica.html',
-        PB: 'https://www4.sefaz.pb.gov.br/sintegra',
-        PR: 'https://www.sintegra.fazenda.pr.gov.br/',
-        RR: 'https://portalweb.sefaz.rr.gov.br/sintegra/servlet/wp_siate_consultasintegra',
-        SE: 'https://security.sefaz.se.gov.br/SIC/sintegra/index.jsp',
-        SP: 'https://www.cadesp.fazenda.sp.gov.br/Pages/Cadastro/Consultas/ConsultaPublica/ConsultaPublica.aspx'
-      };
-
-      return urls[String(uf || '').toUpperCase()] || 'https://www.sintegra.gov.br/new_bv.html';
+      return 'https://www.sintegra.gov.br/';
     }
 
     function nomeUf(uf) {
@@ -1044,13 +1050,10 @@
       const uf = String(dados.uf || '').toUpperCase();
       const cnpj = somenteNumeros(dados.cnpj);
       const url = urlSintegraPorUf(uf);
-      const fallback = url.includes('sintegra.gov.br/new_bv');
 
-      sintegraStatus.textContent = fallback
-        ? 'CNPJ confirmado na Receita. UF identificada: ' + nomeUf(uf) + '. Abra o Sintegra nacional e selecione essa UF; depois cole o CNPJ ' + cnpj + '.'
-        : 'CNPJ confirmado na Receita. UF identificada: ' + nomeUf(uf) + '. Abra a consulta estadual e cole o CNPJ ' + cnpj + '.';
+      sintegraStatus.textContent = 'CNPJ confirmado na Receita. UF identificada: ' + nomeUf(uf) + '. O botão abre o Sintegra oficial; selecione essa UF e cole o CNPJ ' + cnpj + '.';
 
-      abrirSintegraBtn.textContent = fallback ? 'Abrir Sintegra nacional' : 'Abrir Sintegra ' + uf;
+      abrirSintegraBtn.textContent = 'Abrir Sintegra oficial';
       abrirSintegraBtn.dataset.url = url;
     }
 
@@ -1133,8 +1136,8 @@
       return formatarCnpj(registro.cnpj) + ' - ' + String(registro.nome || 'Sem nome').slice(0, 42) + ' - ' + dataTexto;
     }
 
-    function abrirHistorico() {
-      carregarHistorico();
+    async function abrirHistorico() {
+      await carregarHistorico();
       historyManager.style.display = 'block';
       if (!historicoAtual.length) mostrarToast('Nenhum histórico registrado ainda.');
     }
@@ -1240,8 +1243,11 @@
             };
           });
           salvarHistoricoLocal(historico);
+          firebaseStatus.textContent = 'Firebase conectado. Histórico carregado da nuvem.';
         } catch (erro) {
           console.error(erro);
+          firebaseStatus.textContent = 'Firebase conectado, mas o histórico da nuvem não carregou. Conferir regras do Firestore.';
+          mostrarToast('Histórico da nuvem não carregou.');
         }
       }
 
