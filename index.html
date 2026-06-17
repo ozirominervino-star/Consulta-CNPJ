@@ -189,6 +189,37 @@
       margin-top: 8px;
     }
 
+    .auth-panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafc;
+      padding: 12px;
+      margin-bottom: 16px;
+    }
+
+    .auth-panel strong {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .auth-fields {
+      display: grid;
+      grid-template-columns: minmax(160px, 1fr) minmax(140px, 0.8fr) auto auto auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .auth-status {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
     .history {
       display: none;
       margin-bottom: 18px;
@@ -247,6 +278,47 @@
       width: 100%;
       min-height: 150px;
       padding: 8px;
+    }
+
+    .history-search {
+      margin-bottom: 10px;
+    }
+
+    .history-table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+      font-size: 14px;
+    }
+
+    .history-table th,
+    .history-table td {
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .history-table th {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      background: #f1f5f9;
+    }
+
+    .history-table tr.selected {
+      background: #dbeafe;
+    }
+
+    .history-table tr {
+      cursor: pointer;
     }
 
     .history-manager-actions {
@@ -440,7 +512,7 @@
     @media (max-width: 820px) {
       .container { padding: 22px 16px; }
       h1 { font-size: 25px; }
-      .search, .summary, .grid, .grid.three { grid-template-columns: 1fr; }
+      .search, .summary, .grid, .grid.three, .auth-fields { grid-template-columns: 1fr; }
       .sync-panel { align-items: stretch; flex-direction: column; }
       .history-tools, .history-manager-actions { flex-direction: column; }
       button { width: 100%; }
@@ -449,7 +521,7 @@
     @media print {
       body { background: #fff; padding: 0; }
       .container { box-shadow: none; max-width: none; border-radius: 0; }
-      .search, .sync-panel, .firebase-diagnostics, .history-tools, .history-manager, .history, .toolbar, .decision-actions, .message, .toast { display: none !important; }
+      .search, .sync-panel, .firebase-diagnostics, .auth-panel, .history-tools, .history-manager, .history, .toolbar, .decision-actions, .message, .toast { display: none !important; }
       .summary { display: grid !important; }
       .result { display: block !important; }
       details { break-inside: avoid; }
@@ -488,9 +560,38 @@
       <code id="firebaseDiagnosticsCode"></code>
     </div>
 
+    <div class="auth-panel">
+      <strong>Acesso</strong>
+      <div class="auth-fields">
+        <input id="authEmail" type="email" autocomplete="username" placeholder="E-mail">
+        <input id="authPassword" type="password" autocomplete="current-password" placeholder="Senha">
+        <button id="loginBtn" type="button">Entrar</button>
+        <button id="criarLoginBtn" type="button" class="ghost-button">Criar acesso</button>
+        <button id="sairBtn" type="button" class="ghost-button">Sair</button>
+      </div>
+      <span id="authStatus" class="auth-status">Sem login. Firebase pode funcionar com regras abertas, mas o ideal é usar autenticação.</span>
+    </div>
+
     <div id="historyManager" class="history-manager">
       <strong>Histórico registrado</strong>
-      <select id="historySelect" size="6"></select>
+      <input id="historySearch" class="history-search" type="text" placeholder="Buscar por CNPJ, razão social, UF ou status">
+      <select id="historySelect" size="6" style="display: none;"></select>
+      <div class="history-table-wrap">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>CNPJ</th>
+              <th>Razão social</th>
+              <th>UF</th>
+              <th>Situação</th>
+              <th>Status comercial</th>
+              <th>Responsável</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody"></tbody>
+        </table>
+      </div>
       <div class="history-manager-actions">
         <button id="alterarHistoricoBtn" type="button">Alterar selecionado</button>
         <button id="excluirHistoricoBtn" type="button" class="ghost-button">Excluir selecionado</button>
@@ -532,7 +633,7 @@
       <div class="toolbar">
         <button id="copiarCnpjBtn" type="button" class="ghost-button">Copiar CNPJ</button>
         <button id="copiarBtn" type="button" class="ghost-button">Copiar ficha</button>
-        <button id="imprimirBtn" type="button" class="ghost-button">Imprimir / PDF</button>
+        <button id="imprimirBtn" type="button" class="ghost-button">Gerar ficha / PDF</button>
       </div>
 
       <div class="section-title">Consulta Sintegra</div>
@@ -552,6 +653,33 @@
       <div class="section-title">Recomendação interna</div>
       <div class="decision-panel">
         <div class="grid">
+          <div class="field">
+            <strong>Validação Receita</strong>
+            <select id="statusReceita">
+              <option value="Confirmado">Confirmado</option>
+              <option value="Pendente">Pendente</option>
+              <option value="Divergente">Divergente</option>
+            </select>
+          </div>
+          <div class="field">
+            <strong>Validação Sintegra</strong>
+            <select id="statusSintegra">
+              <option value="Pendente">Pendente</option>
+              <option value="Validado">Validado</option>
+              <option value="Não contribuinte / sem IE">Não contribuinte / sem IE</option>
+              <option value="Divergente">Divergente</option>
+            </select>
+          </div>
+          <div class="field">
+            <strong>Validação Crédito</strong>
+            <select id="statusCredito">
+              <option value="Pendente">Pendente</option>
+              <option value="Aprovado">Aprovado</option>
+              <option value="Aprovado com condição">Aprovado com condição</option>
+              <option value="Restrição encontrada">Restrição encontrada</option>
+              <option value="Não consultado">Não consultado</option>
+            </select>
+          </div>
           <div class="field">
             <strong>Status comercial</strong>
             <select id="statusComercial">
@@ -666,6 +794,8 @@
     const historyList = document.getElementById('historyList');
     const historyManager = document.getElementById('historyManager');
     const historySelect = document.getElementById('historySelect');
+    const historySearch = document.getElementById('historySearch');
+    const historyTableBody = document.getElementById('historyTableBody');
     const abrirHistoricoBtn = document.getElementById('abrirHistoricoBtn');
     const sincronizarHistoricoBtn = document.getElementById('sincronizarHistoricoBtn');
     const alterarHistoricoBtn = document.getElementById('alterarHistoricoBtn');
@@ -685,6 +815,15 @@
     const firebaseDiagnostics = document.getElementById('firebaseDiagnostics');
     const firebaseDiagnosticsText = document.getElementById('firebaseDiagnosticsText');
     const firebaseDiagnosticsCode = document.getElementById('firebaseDiagnosticsCode');
+    const authEmail = document.getElementById('authEmail');
+    const authPassword = document.getElementById('authPassword');
+    const loginBtn = document.getElementById('loginBtn');
+    const criarLoginBtn = document.getElementById('criarLoginBtn');
+    const sairBtn = document.getElementById('sairBtn');
+    const authStatus = document.getElementById('authStatus');
+    const statusReceita = document.getElementById('statusReceita');
+    const statusSintegra = document.getElementById('statusSintegra');
+    const statusCredito = document.getElementById('statusCredito');
     const statusComercial = document.getElementById('statusComercial');
     const observacoesCredito = document.getElementById('observacoesCredito');
     const decisaoAtualizacao = document.getElementById('decisaoAtualizacao');
@@ -693,6 +832,9 @@
     let historicoAtual = [];
     let firebaseDb = null;
     let firebaseApi = null;
+    let firebaseAuth = null;
+    let authApi = null;
+    let firebaseUser = null;
     let firebasePronto = false;
 
     const firebaseConfig = {
@@ -724,6 +866,7 @@
     });
     alterarHistoricoBtn.addEventListener('click', alterarHistoricoSelecionado);
     excluirHistoricoBtn.addEventListener('click', excluirHistoricoSelecionado);
+    historySearch.addEventListener('input', renderizarHistorico);
     fecharHistoricoBtn.addEventListener('click', function () {
       historyManager.style.display = 'none';
     });
@@ -731,6 +874,9 @@
     salvarDecisaoBtn.addEventListener('click', salvarDecisao);
     testarFirebaseBtn.addEventListener('click', testarFirebase);
     copiarRegrasFirebaseBtn.addEventListener('click', copiarRegrasFirebase);
+    loginBtn.addEventListener('click', entrarFirebase);
+    criarLoginBtn.addEventListener('click', criarAcessoFirebase);
+    sairBtn.addEventListener('click', sairFirebase);
     iniciarFirebase();
     carregarHistorico();
 
@@ -748,12 +894,16 @@
         const modulos = await carregarFirebaseSdk();
         const appModule = modulos.appModule;
         const firestoreModule = modulos.firestoreModule;
+        const authModule = modulos.authModule;
         const app = appModule.initializeApp(firebaseConfig);
 
         firebaseDb = firestoreModule.getFirestore(app);
         firebaseApi = firestoreModule;
+        firebaseAuth = authModule.getAuth(app);
+        authApi = authModule;
         firebasePronto = true;
         firebaseStatus.textContent = 'Firebase conectado. Decisões e histórico podem sincronizar entre dispositivos.';
+        configurarAuth();
         sincronizarHistoricoFirebase(false);
       } catch (erro) {
         firebaseStatus.textContent = 'Não foi possível conectar ao Firebase. Conferir configuração e regras.';
@@ -770,13 +920,60 @@
         try {
           const appModule = await import('https://www.gstatic.com/firebasejs/' + versao + '/firebase-app.js');
           const firestoreModule = await import('https://www.gstatic.com/firebasejs/' + versao + '/firebase-firestore.js');
-          return { appModule: appModule, firestoreModule: firestoreModule };
+          const authModule = await import('https://www.gstatic.com/firebasejs/' + versao + '/firebase-auth.js');
+          return { appModule: appModule, firestoreModule: firestoreModule, authModule: authModule };
         } catch (erro) {
           ultimoErro = erro;
         }
       }
 
       throw ultimoErro || new Error('SDK do Firebase indisponível.');
+    }
+
+    function configurarAuth() {
+      if (!authApi || !firebaseAuth) return;
+
+      authApi.onAuthStateChanged(firebaseAuth, function (user) {
+        firebaseUser = user || null;
+        authStatus.textContent = user
+          ? 'Conectado como ' + (user.email || 'usuário sem e-mail') + '.'
+          : 'Sem login. Para regras seguras, entre com e-mail e senha.';
+        carregarHistorico();
+      });
+    }
+
+    async function entrarFirebase() {
+      if (!authApi || !firebaseAuth) {
+        mostrarToast('Firebase Auth ainda não carregou.');
+        return;
+      }
+
+      try {
+        await authApi.signInWithEmailAndPassword(firebaseAuth, authEmail.value.trim(), authPassword.value);
+        mostrarToast('Login realizado.');
+      } catch (erro) {
+        mostrarErroFirebase('Falha no login. Confira se Email/Senha está habilitado no Firebase Authentication.', erro);
+      }
+    }
+
+    async function criarAcessoFirebase() {
+      if (!authApi || !firebaseAuth) {
+        mostrarToast('Firebase Auth ainda não carregou.');
+        return;
+      }
+
+      try {
+        await authApi.createUserWithEmailAndPassword(firebaseAuth, authEmail.value.trim(), authPassword.value);
+        mostrarToast('Acesso criado.');
+      } catch (erro) {
+        mostrarErroFirebase('Falha ao criar acesso. Confira se Email/Senha está habilitado no Firebase Authentication.', erro);
+      }
+    }
+
+    async function sairFirebase() {
+      if (!authApi || !firebaseAuth) return;
+      await authApi.signOut(firebaseAuth);
+      mostrarToast('Você saiu.');
     }
 
     async function testarFirebase() {
@@ -821,7 +1018,8 @@
     }
 
     function regrasFirebaseTeste() {
-      return `rules_version = '2';
+      return `// TESTE TEMPORÁRIO - aberto
+rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /fichas_cnpj/{document=**} {
@@ -831,7 +1029,22 @@ service cloud.firestore {
       allow read, write: if true;
     }
   }
-}`;
+}
+
+// PRODUÇÃO - use depois de habilitar Authentication > Email/Senha
+/*
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /fichas_cnpj/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+    match /testes/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+*/`;
     }
 
     function copiarRegrasFirebase() {
@@ -1067,6 +1280,9 @@ service cloud.firestore {
         'Telefone: ' + texto(dados.telefone),
         'E-mail: ' + texto(dados.email),
         'Atividade principal: ' + principal,
+        'Receita: ' + texto(statusReceita.value),
+        'Sintegra: ' + texto(statusSintegra.value),
+        'Crédito: ' + texto(statusCredito.value),
         'Status comercial: ' + texto(decisao.status || statusComercial.value),
         'Observações: ' + texto(decisao.observacoes || observacoesCredito.value)
       ].join('\n');
@@ -1152,11 +1368,17 @@ service cloud.firestore {
     async function carregarDecisao(cnpj) {
       const salvo = localStorage.getItem(chaveDecisao(cnpj));
       if (!salvo) {
+        statusReceita.value = 'Confirmado';
+        statusSintegra.value = 'Pendente';
+        statusCredito.value = 'Pendente';
         statusComercial.value = 'Não analisado';
         observacoesCredito.value = '';
         decisaoAtualizacao.textContent = 'Não informado';
       } else {
         const decisao = JSON.parse(salvo);
+        statusReceita.value = decisao.statusReceita || 'Confirmado';
+        statusSintegra.value = decisao.statusSintegra || 'Pendente';
+        statusCredito.value = decisao.statusCredito || 'Pendente';
         statusComercial.value = decisao.status || 'Não analisado';
         observacoesCredito.value = decisao.observacoes || '';
         decisaoAtualizacao.textContent = decisao.atualizadoEm || 'Não informado';
@@ -1170,6 +1392,9 @@ service cloud.firestore {
         if (!registro.exists() || !registro.data().decisao) return;
 
         const decisaoFirebase = registro.data().decisao;
+        statusReceita.value = decisaoFirebase.statusReceita || 'Confirmado';
+        statusSintegra.value = decisaoFirebase.statusSintegra || 'Pendente';
+        statusCredito.value = decisaoFirebase.statusCredito || 'Pendente';
         statusComercial.value = decisaoFirebase.status || 'Não analisado';
         observacoesCredito.value = decisaoFirebase.observacoes || '';
         decisaoAtualizacao.textContent = decisaoFirebase.atualizadoEm || 'Não informado';
@@ -1184,9 +1409,13 @@ service cloud.firestore {
       const cnpj = somenteNumeros(dadosAtuais.cnpj);
       const atualizadoEm = new Date().toLocaleString('pt-BR');
       const decisao = {
+        statusReceita: statusReceita.value,
+        statusSintegra: statusSintegra.value,
+        statusCredito: statusCredito.value,
         status: statusComercial.value,
         observacoes: observacoesCredito.value.trim(),
-        atualizadoEm: atualizadoEm
+        atualizadoEm: atualizadoEm,
+        responsavel: firebaseUser ? firebaseUser.email || firebaseUser.uid : 'Local'
       };
 
       localStorage.setItem(chaveDecisao(cnpj), JSON.stringify(decisao));
@@ -1215,6 +1444,64 @@ service cloud.firestore {
       const data = registro.data ? new Date(registro.data) : null;
       const dataTexto = data && !Number.isNaN(data.getTime()) ? data.toLocaleString('pt-BR') : 'sem data';
       return formatarCnpj(registro.cnpj) + ' - ' + String(registro.nome || 'Sem nome').slice(0, 42) + ' - ' + dataTexto;
+    }
+
+    function passaFiltroHistorico(registro) {
+      const filtro = historySearch.value.trim().toLowerCase();
+      if (!filtro) return true;
+
+      return [
+        registro.cnpj,
+        registro.nome,
+        registro.uf,
+        registro.situacao,
+        registro.status,
+        registro.responsavel
+      ].join(' ').toLowerCase().includes(filtro);
+    }
+
+    function selecionarHistorico(cnpj) {
+      historySelect.value = cnpj;
+      Array.from(historyTableBody.querySelectorAll('tr')).forEach(function (linha) {
+        linha.className = linha.dataset.cnpj === cnpj ? 'selected' : '';
+      });
+    }
+
+    function renderizarHistorico() {
+      historyTableBody.innerHTML = '';
+      historySelect.innerHTML = '';
+
+      const filtrado = historicoAtual.filter(passaFiltroHistorico);
+
+      filtrado.forEach(function (registro) {
+        const cnpj = somenteNumeros(registro.cnpj);
+        const data = registro.data ? new Date(registro.data) : null;
+        const dataTexto = data && !Number.isNaN(data.getTime()) ? data.toLocaleString('pt-BR') : 'sem data';
+
+        const option = document.createElement('option');
+        option.value = cnpj;
+        option.textContent = textoHistorico(registro);
+        historySelect.appendChild(option);
+
+        const linha = document.createElement('tr');
+        linha.dataset.cnpj = cnpj;
+        linha.innerHTML =
+          '<td>' + dataTexto + '</td>' +
+          '<td>' + formatarCnpj(cnpj) + '</td>' +
+          '<td>' + texto(registro.nome) + '</td>' +
+          '<td>' + texto(registro.uf) + '</td>' +
+          '<td>' + texto(registro.situacao) + '</td>' +
+          '<td>' + texto(registro.status) + '</td>' +
+          '<td>' + texto(registro.responsavel) + '</td>';
+        linha.addEventListener('click', function () {
+          selecionarHistorico(cnpj);
+        });
+        linha.addEventListener('dblclick', function () {
+          selecionarHistorico(cnpj);
+          alterarHistoricoSelecionado();
+        });
+        historyTableBody.appendChild(linha);
+      });
     }
 
     async function abrirHistorico() {
@@ -1288,6 +1575,10 @@ service cloud.firestore {
       const item = {
         cnpj: cnpj,
         nome: dados.nome || dados.fantasia || cnpj,
+        uf: dados.uf || '',
+        situacao: dados.situacao || '',
+        status: statusComercial.value || 'Não analisado',
+        responsavel: firebaseUser ? firebaseUser.email || firebaseUser.uid : 'Local',
         data: new Date().toISOString()
       };
       const historico = obterHistorico().filter(function (registro) {
@@ -1317,9 +1608,14 @@ service cloud.firestore {
           const resultado = await firebaseApi.getDocs(consulta);
           historico = resultado.docs.map(function (documento) {
             const dados = documento.data();
+            const decisao = dados.decisao || {};
             return {
               cnpj: dados.cnpj || documento.id,
               nome: dados.nome || dados.fantasia || documento.id,
+              uf: dados.uf || '',
+              situacao: dados.situacao || '',
+              status: decisao.status || '',
+              responsavel: dados.responsavel || decisao.responsavel || '',
               data: dados.ultimaConsulta || ''
             };
           });
@@ -1334,7 +1630,6 @@ service cloud.firestore {
 
       historicoAtual = historico;
       historyList.innerHTML = '';
-      historySelect.innerHTML = '';
       historyBox.style.display = historico.length ? 'block' : 'none';
 
       historico.slice(0, 8).forEach(function (registro) {
@@ -1349,12 +1644,7 @@ service cloud.firestore {
         historyList.appendChild(chip);
       });
 
-      historico.forEach(function (registro) {
-        const option = document.createElement('option');
-        option.value = somenteNumeros(registro.cnpj);
-        option.textContent = textoHistorico(registro);
-        historySelect.appendChild(option);
-      });
+      renderizarHistorico();
     }
 
     async function excluirHistoricoFirebase(cnpj) {
@@ -1392,6 +1682,10 @@ service cloud.firestore {
         porte: dados.porte || '',
         telefone: dados.telefone || '',
         email: dados.email || '',
+        inscricaoEstadual: obterInscricaoEstadual(dados) || '',
+        alertas: gerarAlertas(dados),
+        receitaWs: dados,
+        responsavel: firebaseUser ? firebaseUser.email || firebaseUser.uid : 'Local',
         ultimaConsulta: new Date().toISOString(),
         ultimaConsultaMs: Date.now()
       };

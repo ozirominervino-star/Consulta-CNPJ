@@ -17,8 +17,12 @@ Aplicativo de página única para consultar CNPJ usando a API pública do Receit
 - Alertas básicos de risco cadastral, como empresa não ativa, cadastro recente, ausência de telefone/e-mail e capital social baixo.
 - Recomendação interna salva no navegador: liberado, PIX à vista, analisar crédito, não vender no prazo ou cadastro incompleto.
 - Sincronização opcional com Firebase/Firestore para acessar decisões e histórico em mais de um dispositivo.
+- Login opcional via Firebase Authentication por e-mail/senha.
+- Histórico em tabela pesquisável por CNPJ, razão social, UF, situação, status ou responsável.
+- Salvamento da ficha completa no Firebase, incluindo retorno ReceitaWS, alertas, validações e decisão interna.
+- Status de validação para Receita, Sintegra e Crédito.
 - Botão para copiar um resumo pronto para WhatsApp, cadastro ou análise interna.
-- Botão para imprimir ou salvar a ficha em PDF pelo navegador.
+- Botão para gerar ficha/PDF pelo navegador.
 - Histórico local das últimas consultas.
 - Dados técnicos do ReceitaWS agrupados em uma área recolhida.
 
@@ -42,3 +46,12 @@ O app já está com o `firebaseConfig` preenchido no arquivo `index.html`.
 6. No outro dispositivo/usuário, clique em `Consultar histórico`.
 
 Para teste inicial, as regras do Firestore precisam permitir leitura e gravação. Em produção, use autenticação e regras restritas.
+
+## Login e segurança
+
+Para usar regras seguras:
+
+1. No Firebase, ative `Authentication`.
+2. Em `Sign-in method`, habilite `Email/senha`.
+3. Crie o primeiro acesso pelo próprio app, no painel `Acesso`.
+4. Depois troque as regras abertas pelas regras de produção copiadas no botão `Copiar regras de teste`.
