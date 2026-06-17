@@ -192,6 +192,43 @@
       cursor: pointer;
     }
 
+    .history-tools {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .history-manager {
+      display: none;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafc;
+      padding: 14px;
+      margin-bottom: 18px;
+    }
+
+    .history-manager strong {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .history-manager select {
+      width: 100%;
+      min-height: 150px;
+      padding: 8px;
+    }
+
+    .history-manager-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
     .summary {
       display: none;
       grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -378,13 +415,14 @@
       h1 { font-size: 25px; }
       .search, .summary, .grid, .grid.three { grid-template-columns: 1fr; }
       .sync-panel { align-items: stretch; flex-direction: column; }
+      .history-tools, .history-manager-actions { flex-direction: column; }
       button { width: 100%; }
     }
 
     @media print {
       body { background: #fff; padding: 0; }
       .container { box-shadow: none; max-width: none; border-radius: 0; }
-      .search, .sync-panel, .history, .toolbar, .decision-actions, .message, .toast { display: none !important; }
+      .search, .sync-panel, .history-tools, .history-manager, .history, .toolbar, .decision-actions, .message, .toast { display: none !important; }
       .summary { display: grid !important; }
       .result { display: block !important; }
       details { break-inside: avoid; }
@@ -403,12 +441,26 @@
       <button id="consultarBtn" type="button">Consultar</button>
     </div>
 
+    <div class="history-tools">
+      <button id="abrirHistoricoBtn" type="button" class="ghost-button">Consultar histórico</button>
+    </div>
+
     <div class="sync-panel">
       <div>
         <strong>Sincronização</strong>
         <span id="firebaseStatus">Firebase não configurado. Salvando apenas neste dispositivo.</span>
       </div>
       <button id="testarFirebaseBtn" type="button" class="ghost-button">Testar Firebase</button>
+    </div>
+
+    <div id="historyManager" class="history-manager">
+      <strong>Histórico registrado</strong>
+      <select id="historySelect" size="6"></select>
+      <div class="history-manager-actions">
+        <button id="alterarHistoricoBtn" type="button">Alterar selecionado</button>
+        <button id="excluirHistoricoBtn" type="button" class="ghost-button">Excluir selecionado</button>
+        <button id="fecharHistoricoBtn" type="button" class="ghost-button">Fechar histórico</button>
+      </div>
     </div>
 
     <div id="history" class="history">
@@ -577,6 +629,12 @@
     const summary = document.getElementById('summary');
     const historyBox = document.getElementById('history');
     const historyList = document.getElementById('historyList');
+    const historyManager = document.getElementById('historyManager');
+    const historySelect = document.getElementById('historySelect');
+    const abrirHistoricoBtn = document.getElementById('abrirHistoricoBtn');
+    const alterarHistoricoBtn = document.getElementById('alterarHistoricoBtn');
+    const excluirHistoricoBtn = document.getElementById('excluirHistoricoBtn');
+    const fecharHistoricoBtn = document.getElementById('fecharHistoricoBtn');
     const toast = document.getElementById('toast');
     const copiarBtn = document.getElementById('copiarBtn');
     const copiarCnpjBtn = document.getElementById('copiarCnpjBtn');
@@ -592,6 +650,7 @@
     const decisaoAtualizacao = document.getElementById('decisaoAtualizacao');
 
     let dadosAtuais = null;
+    let historicoAtual = [];
     let firebaseDb = null;
     let firebaseApi = null;
     let firebasePronto = false;
@@ -619,6 +678,12 @@
     copiarCnpjBtn.addEventListener('click', copiarCnpjAtual);
     copiarCnpjSintegraBtn.addEventListener('click', copiarCnpjAtual);
     abrirSintegraBtn.addEventListener('click', abrirSintegraAtual);
+    abrirHistoricoBtn.addEventListener('click', abrirHistorico);
+    alterarHistoricoBtn.addEventListener('click', alterarHistoricoSelecionado);
+    excluirHistoricoBtn.addEventListener('click', excluirHistoricoSelecionado);
+    fecharHistoricoBtn.addEventListener('click', function () {
+      historyManager.style.display = 'none';
+    });
     imprimirBtn.addEventListener('click', function () { window.print(); });
     salvarDecisaoBtn.addEventListener('click', salvarDecisao);
     testarFirebaseBtn.addEventListener('click', testarFirebase);
@@ -1053,6 +1118,59 @@
       }
     }
 
+    function salvarHistoricoLocal(historico) {
+      localStorage.setItem(chaveHistorico(), JSON.stringify(historico.slice(0, 50)));
+    }
+
+    function textoHistorico(registro) {
+      const data = registro.data ? new Date(registro.data) : null;
+      const dataTexto = data && !Number.isNaN(data.getTime()) ? data.toLocaleString('pt-BR') : 'sem data';
+      return formatarCnpj(registro.cnpj) + ' - ' + String(registro.nome || 'Sem nome').slice(0, 42) + ' - ' + dataTexto;
+    }
+
+    function abrirHistorico() {
+      carregarHistorico();
+      historyManager.style.display = 'block';
+      if (!historicoAtual.length) mostrarToast('Nenhum histórico registrado ainda.');
+    }
+
+    function cnpjHistoricoSelecionado() {
+      return historySelect.value || '';
+    }
+
+    function alterarHistoricoSelecionado() {
+      const cnpj = cnpjHistoricoSelecionado();
+      if (!cnpj) {
+        mostrarToast('Selecione um histórico primeiro.');
+        return;
+      }
+
+      input.value = formatarCnpj(cnpj);
+      historyManager.style.display = 'none';
+      consultarCnpj();
+    }
+
+    function excluirHistoricoSelecionado() {
+      const cnpj = cnpjHistoricoSelecionado();
+      if (!cnpj) {
+        mostrarToast('Selecione um histórico primeiro.');
+        return;
+      }
+
+      const historico = obterHistorico().filter(function (registro) {
+        return somenteNumeros(registro.cnpj) !== cnpj;
+      });
+
+      salvarHistoricoLocal(historico);
+      localStorage.removeItem(chaveDecisao(cnpj));
+      carregarHistorico();
+      mostrarToast('Histórico excluído.');
+
+      if (firebasePronto) {
+        executarEmSegundoPlano(excluirHistoricoFirebase(cnpj));
+      }
+    }
+
     function salvarNoHistorico(dados) {
       const cnpj = somenteNumeros(dados.cnpj);
       const item = {
@@ -1065,7 +1183,7 @@
       });
 
       historico.unshift(item);
-      localStorage.setItem(chaveHistorico(), JSON.stringify(historico.slice(0, 8)));
+      salvarHistoricoLocal(historico);
       carregarHistorico();
       executarEmSegundoPlano(
         salvarFichaFirebase(dados).then(function () {
@@ -1093,16 +1211,18 @@
               data: dados.ultimaConsulta || ''
             };
           });
-          localStorage.setItem(chaveHistorico(), JSON.stringify(historico));
+          salvarHistoricoLocal(historico);
         } catch (erro) {
           console.error(erro);
         }
       }
 
+      historicoAtual = historico;
       historyList.innerHTML = '';
+      historySelect.innerHTML = '';
       historyBox.style.display = historico.length ? 'block' : 'none';
 
-      historico.forEach(function (registro) {
+      historico.slice(0, 8).forEach(function (registro) {
         const chip = document.createElement('button');
         chip.type = 'button';
         chip.className = 'history-chip';
@@ -1113,6 +1233,24 @@
         });
         historyList.appendChild(chip);
       });
+
+      historico.forEach(function (registro) {
+        const option = document.createElement('option');
+        option.value = somenteNumeros(registro.cnpj);
+        option.textContent = textoHistorico(registro);
+        historySelect.appendChild(option);
+      });
+    }
+
+    async function excluirHistoricoFirebase(cnpj) {
+      if (!firebasePronto) return;
+
+      try {
+        await firebaseApi.deleteDoc(firebaseApi.doc(firebaseDb, 'fichas_cnpj', cnpj));
+      } catch (erro) {
+        console.error(erro);
+        mostrarToast('Não foi possível excluir no Firebase.');
+      }
     }
 
     async function salvarFichaFirebase(dados, decisaoManual) {

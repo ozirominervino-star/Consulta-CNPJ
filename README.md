@@ -8,6 +8,10 @@ Aplicativo de página única para consultar CNPJ usando a API pública do Receit
 - Resumo no topo com situação cadastral, Simples Nacional, porte, UF e última atualização.
 - Etapa Sintegra: confirma o CNPJ, identifica a UF e abre a consulta estadual correspondente quando houver link direto confiável.
 - Botão para copiar o CNPJ sem pontuação para colar no Sintegra.
+- Registro automático das consultas realizadas.
+- Botão `Consultar histórico` para visualizar os registros salvos.
+- Botão `Alterar selecionado` para reabrir um CNPJ do histórico e atualizar a ficha/decisão.
+- Botão `Excluir selecionado` para apagar um registro do histórico local e, se conectado, também do Firebase.
 - Campo de Inscrição Estadual quando a informação vier disponível no retorno.
 - Alertas básicos de risco cadastral, como empresa não ativa, cadastro recente, ausência de telefone/e-mail e capital social baixo.
 - Recomendação interna salva no navegador: liberado, PIX à vista, analisar crédito, não vender no prazo ou cadastro incompleto.
