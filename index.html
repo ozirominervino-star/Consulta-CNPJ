@@ -443,6 +443,7 @@
 
     <div class="history-tools">
       <button id="abrirHistoricoBtn" type="button" class="ghost-button">Consultar histórico</button>
+      <button id="sincronizarHistoricoBtn" type="button" class="ghost-button">Sincronizar histórico</button>
     </div>
 
     <div class="sync-panel">
@@ -632,6 +633,7 @@
     const historyManager = document.getElementById('historyManager');
     const historySelect = document.getElementById('historySelect');
     const abrirHistoricoBtn = document.getElementById('abrirHistoricoBtn');
+    const sincronizarHistoricoBtn = document.getElementById('sincronizarHistoricoBtn');
     const alterarHistoricoBtn = document.getElementById('alterarHistoricoBtn');
     const excluirHistoricoBtn = document.getElementById('excluirHistoricoBtn');
     const fecharHistoricoBtn = document.getElementById('fecharHistoricoBtn');
@@ -679,6 +681,9 @@
     copiarCnpjSintegraBtn.addEventListener('click', copiarCnpjAtual);
     abrirSintegraBtn.addEventListener('click', abrirSintegraAtual);
     abrirHistoricoBtn.addEventListener('click', abrirHistorico);
+    sincronizarHistoricoBtn.addEventListener('click', function () {
+      sincronizarHistoricoFirebase(true);
+    });
     alterarHistoricoBtn.addEventListener('click', alterarHistoricoSelecionado);
     excluirHistoricoBtn.addEventListener('click', excluirHistoricoSelecionado);
     fecharHistoricoBtn.addEventListener('click', function () {
@@ -709,7 +714,7 @@
         firebaseApi = firestoreModule;
         firebasePronto = true;
         firebaseStatus.textContent = 'Firebase conectado. Decisões e histórico podem sincronizar entre dispositivos.';
-        carregarHistorico();
+        sincronizarHistoricoFirebase(false);
       } catch (erro) {
         firebaseStatus.textContent = 'Não foi possível conectar ao Firebase. Conferir configuração e regras.';
         console.error(erro);
@@ -1171,6 +1176,29 @@
       }
     }
 
+    async function sincronizarHistoricoFirebase(manual) {
+      if (!firebasePronto) {
+        if (manual) mostrarToast('Firebase ainda não está conectado.');
+        return;
+      }
+
+      const historico = obterHistorico();
+
+      try {
+        for (const registro of historico) {
+          await salvarRegistroHistoricoFirebase(registro);
+        }
+
+        await carregarHistorico();
+        firebaseStatus.textContent = 'Firebase conectado. Histórico sincronizado entre dispositivos.';
+        if (manual) mostrarToast('Histórico sincronizado.');
+      } catch (erro) {
+        console.error(erro);
+        firebaseStatus.textContent = 'Firebase conectado, mas não conseguiu sincronizar. Conferir regras do Firestore.';
+        if (manual) mostrarToast('Falha ao sincronizar histórico.');
+      }
+    }
+
     function salvarNoHistorico(dados) {
       const cnpj = somenteNumeros(dados.cnpj);
       const item = {
@@ -1187,7 +1215,7 @@
       carregarHistorico();
       executarEmSegundoPlano(
         salvarFichaFirebase(dados).then(function () {
-          return carregarHistorico();
+          return sincronizarHistoricoFirebase(false);
         })
       );
     }
@@ -1200,7 +1228,7 @@
           const consulta = firebaseApi.query(
             firebaseApi.collection(firebaseDb, 'fichas_cnpj'),
             firebaseApi.orderBy('ultimaConsultaMs', 'desc'),
-            firebaseApi.limit(8)
+            firebaseApi.limit(50)
           );
           const resultado = await firebaseApi.getDocs(consulta);
           historico = resultado.docs.map(function (documento) {
@@ -1289,6 +1317,22 @@
         console.error(erro);
         mostrarToast('Não foi possível sincronizar no Firebase.');
       }
+    }
+
+    async function salvarRegistroHistoricoFirebase(registro) {
+      if (!firebasePronto || !registro || !registro.cnpj) return;
+
+      const cnpj = somenteNumeros(registro.cnpj);
+      const dataRegistro = registro.data || new Date().toISOString();
+      const dataMs = Date.parse(dataRegistro);
+
+      await firebaseApi.setDoc(firebaseApi.doc(firebaseDb, 'fichas_cnpj', cnpj), {
+        cnpj: cnpj,
+        cnpjFormatado: formatarCnpj(cnpj),
+        nome: registro.nome || '',
+        ultimaConsulta: dataRegistro,
+        ultimaConsultaMs: Number.isNaN(dataMs) ? Date.now() : dataMs
+      }, { merge: true });
     }
 
     async function consultarCnpj() {

@@ -10,6 +10,7 @@ Aplicativo de página única para consultar CNPJ usando a API pública do Receit
 - Botão para copiar o CNPJ sem pontuação para colar no Sintegra.
 - Registro automático das consultas realizadas.
 - Botão `Consultar histórico` para visualizar os registros salvos.
+- Botão `Sincronizar histórico` para enviar ao Firebase os registros que estavam salvos apenas no dispositivo atual.
 - Botão `Alterar selecionado` para reabrir um CNPJ do histórico e atualizar a ficha/decisão.
 - Botão `Excluir selecionado` para apagar um registro do histórico local e, se conectado, também do Firebase.
 - Campo de Inscrição Estadual quando a informação vier disponível no retorno.
@@ -24,6 +25,8 @@ Aplicativo de página única para consultar CNPJ usando a API pública do Receit
 ## Como usar
 
 Abra o arquivo `index.html`, digite o CNPJ e clique em `Consultar`. Se o CNPJ existir, use o botão `Abrir Sintegra da UF` e cole o CNPJ quando o portal estadual solicitar.
+
+Se consultas antigas não aparecerem em outro dispositivo, abra o app no dispositivo onde elas aparecem e clique em `Sincronizar histórico`.
 
 Observação: a API pública do ReceitaWS tem limite de consultas por minuto e pode retornar dados de cache.
 
