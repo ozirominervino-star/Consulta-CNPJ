@@ -32,23 +32,11 @@ Observação: a API pública do ReceitaWS tem limite de consultas por minuto e p
 
 ## Como testar com Firebase
 
-1. Crie um projeto no Firebase.
-2. Adicione um app Web nas configurações do projeto.
-3. Ative o Cloud Firestore.
-4. Copie o objeto `firebaseConfig` do Firebase e cole no arquivo `index.html`, substituindo os campos vazios.
-5. Abra o app e clique em `Testar Firebase`.
+O app já está com o `firebaseConfig` preenchido no arquivo `index.html`.
+
+1. Verifique se o Cloud Firestore está ativo no Firebase.
+2. Abra o app e clique em `Testar Firebase`.
+3. Se o teste gravar corretamente, use `Sincronizar histórico` no dispositivo onde as consultas antigas aparecem.
+4. No outro dispositivo/usuário, clique em `Consultar histórico`.
 
 Para teste inicial, as regras do Firestore precisam permitir leitura e gravação. Em produção, use autenticação e regras restritas.
-
-Cole a configuração neste trecho do `index.html`:
-
-```js
-const firebaseConfig = {
-  apiKey: '',
-  authDomain: '',
-  projectId: '',
-  storageBucket: '',
-  messagingSenderId: '',
-  appId: ''
-};
-```
