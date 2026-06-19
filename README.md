@@ -8,6 +8,7 @@ Aplicativo de página única para consultar CNPJ usando a API pública do Receit
 - Resumo no topo com situação cadastral, Simples Nacional, porte, UF e última atualização.
 - Etapa Sintegra: confirma o CNPJ, identifica a UF e abre o portal oficial do Sintegra para selecionar o estado correto.
 - Botão para copiar o CNPJ sem pontuação para colar no Sintegra.
+- Campo para inserir e salvar manualmente a Inscrição Estadual encontrada no Sintegra.
 - Registro automático das consultas realizadas.
 - Botão `Consultar histórico` para visualizar os registros salvos.
 - Botão `Sincronizar histórico` para enviar ao Firebase os registros que estavam salvos apenas no dispositivo atual.
@@ -15,10 +16,10 @@ Aplicativo de página única para consultar CNPJ usando a API pública do Receit
 - Botão `Excluir selecionado` para apagar um registro do histórico local e, se conectado, também do Firebase.
 - Campo de Inscrição Estadual quando a informação vier disponível no retorno.
 - Alertas básicos de risco cadastral, como empresa não ativa, cadastro recente, ausência de telefone/e-mail e capital social baixo.
-- Recomendação interna salva no navegador: liberado, PIX à vista, analisar crédito, não vender no prazo ou cadastro incompleto.
+- Recomendação interna salva no navegador: liberado, faturado, PIX à vista, analisar crédito, não vender no prazo ou cadastro incompleto.
 - Sincronização opcional com Firebase/Firestore para acessar decisões e histórico em mais de um dispositivo.
 - Login opcional via Firebase Authentication por e-mail/senha.
-- Histórico em tabela pesquisável por CNPJ, razão social, UF, situação, status ou responsável.
+- Histórico em tabela pesquisável por CNPJ, razão social, UF, situação, status comercial ou responsável.
 - Salvamento da ficha completa no Firebase, incluindo retorno ReceitaWS, alertas, validações e decisão interna.
 - Status de validação para Receita, Sintegra e Crédito.
 - Botão para copiar um resumo pronto para WhatsApp, cadastro ou análise interna.
@@ -29,6 +30,8 @@ Aplicativo de página única para consultar CNPJ usando a API pública do Receit
 ## Como usar
 
 Abra o arquivo `index.html`, digite o CNPJ e clique em `Consultar`. Se o CNPJ existir, use o botão `Abrir Sintegra oficial`, selecione a UF indicada e cole o CNPJ quando o portal solicitar.
+
+Depois de consultar o Sintegra, informe a Inscrição Estadual no campo `Inscrição Estadual encontrada no Sintegra` e clique em `Salvar IE`. A informação ficará salva na ficha, no resumo, no histórico local e, se o Firebase estiver ativo, também será sincronizada.
 
 Se consultas antigas não aparecerem em outro dispositivo, abra o app no dispositivo onde elas aparecem e clique em `Sincronizar histórico`.
 

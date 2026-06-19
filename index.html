@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Consulta CNPJ + Sintegra</title>
+  <title>Consulta de CNPJ | Winner Horse</title>
   <link rel="icon" type="image/png" href="image_b77415.png">
   <link rel="shortcut icon" type="image/png" href="image_b77415.png">
   <style>
@@ -14,8 +14,9 @@
       --muted: #64748b;
       --line: #dbe3ea;
       --soft: #f8fafc;
-      --primary: #0877ee;
-      --primary-dark: #065fbd;
+      --primary: #0f5ed7;
+      --primary-dark: #0b4aa8;
+      --primary-soft: #eaf2ff;
       --success: #15803d;
       --danger: #dc2626;
       --warning: #b45309;
@@ -23,6 +24,8 @@
       --warning-line: #fed7aa;
       --sintegra-bg: #eff6ff;
       --sintegra-line: #bfdbfe;
+      --radius: 16px;
+      --shadow: 0 18px 50px rgba(15, 23, 42, 0.12);
     }
 
     * { box-sizing: border-box; }
@@ -31,39 +34,98 @@
       margin: 0;
       min-height: 100vh;
       font-family: Arial, Helvetica, sans-serif;
-      background: var(--bg);
+      background:
+        radial-gradient(circle at top left, rgba(15, 94, 215, 0.10), transparent 34%),
+        linear-gradient(180deg, #f5f8f7 0%, var(--bg) 100%);
       color: var(--text);
-      padding: 28px 16px;
+      padding: 34px 16px;
     }
 
     .container {
       width: 100%;
-      max-width: 1060px;
+      max-width: 1120px;
       margin: 0 auto;
       background: var(--card);
-      border-radius: 10px;
-      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.10);
-      padding: 28px;
+      border: 1px solid rgba(219, 227, 234, 0.88);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 30px;
+    }
+
+    .app-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: flex-start;
+      margin-bottom: 24px;
+    }
+
+    .brand-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #475569;
+      background: #f1f5f9;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 11px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .brand-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--success);
+      box-shadow: 0 0 0 4px rgba(21, 128, 61, 0.12);
+    }
+
+    .header-meta {
+      color: var(--muted);
+      font-size: 13px;
+      text-align: right;
+      line-height: 1.45;
+      max-width: 260px;
     }
 
     h1 {
-      margin: 0 0 6px;
-      text-align: center;
-      font-size: 30px;
+      margin: 14px 0 8px;
+      text-align: left;
+      font-size: 34px;
+      letter-spacing: -0.03em;
     }
 
     .subtitle {
-      margin: 0 0 24px;
-      text-align: center;
+      margin: 0;
+      text-align: left;
       color: var(--muted);
-      font-size: 14px;
+      font-size: 15px;
+      line-height: 1.55;
+      max-width: 660px;
+    }
+
+    .search-panel {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      padding: 16px;
+      margin-bottom: 16px;
     }
 
     .search {
       display: grid;
       grid-template-columns: minmax(180px, 1fr) auto;
       gap: 12px;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
+    }
+
+    .search-help {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
     }
 
     input, select, textarea {
@@ -96,8 +158,8 @@
     button {
       min-height: 52px;
       border: 0;
-      border-radius: 5px;
-      padding: 0 20px;
+      border-radius: 8px;
+      padding: 0 22px;
       background: var(--primary);
       color: #fff;
       font-size: 16px;
@@ -109,15 +171,50 @@
     button:disabled { background: #94a3b8; cursor: wait; }
 
     .ghost-button {
-      background: #e2e8f0;
+      background: #eef2f7;
       color: #0f172a;
+      border: 1px solid #dde6f0;
     }
 
-    .ghost-button:hover { background: #cbd5e1; }
+    .ghost-button:hover { background: #e2e8f0; }
+
+    .support-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .support-actions-left {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .settings-details {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #f8fafc;
+      margin-top: 0;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    .settings-details > summary {
+      padding: 13px 14px;
+      color: #334155;
+      background: #f8fafc;
+      font-size: 14px;
+    }
+
+    .settings-details .settings-content {
+      padding: 0 14px 14px;
+    }
 
     .message {
       display: none;
-      border-radius: 6px;
+      border-radius: 10px;
       padding: 13px 14px;
       margin: 12px 0 18px;
       font-size: 15px;
@@ -147,7 +244,7 @@
       border-radius: 8px;
       background: #f8fafc;
       padding: 12px;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
 
     .sync-panel strong {
@@ -194,7 +291,7 @@
       border-radius: 8px;
       background: #f8fafc;
       padding: 12px;
-      margin-bottom: 16px;
+      margin-bottom: 0;
     }
 
     .auth-panel strong {
@@ -260,7 +357,7 @@
     .history-manager {
       display: none;
       border: 1px solid var(--line);
-      border-radius: 8px;
+      border-radius: 12px;
       background: #f8fafc;
       padding: 14px;
       margin-bottom: 18px;
@@ -330,17 +427,23 @@
 
     .summary {
       display: none;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-columns: repeat(6, minmax(0, 1fr));
       gap: 12px;
-      margin: 8px 0 20px;
+      margin: 18px 0 22px;
     }
 
     .summary-card {
       border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--soft);
-      padding: 14px;
-      min-height: 82px;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      padding: 15px;
+      min-height: 92px;
+      box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+    }
+
+    .summary-card.primary {
+      border-color: #bfdbfe;
+      background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
     }
 
     .summary-card strong {
@@ -353,7 +456,7 @@
 
     .summary-card span {
       display: block;
-      font-size: 16px;
+      font-size: 17px;
       font-weight: 700;
       overflow-wrap: anywhere;
     }
@@ -366,14 +469,15 @@
 
     .toolbar {
       display: flex;
+      justify-content: flex-end;
       gap: 10px;
       flex-wrap: wrap;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
     }
 
     .sintegra-panel {
       border: 1px solid var(--sintegra-line);
-      border-radius: 8px;
+      border-radius: 12px;
       background: var(--sintegra-bg);
       padding: 14px;
     }
@@ -390,11 +494,37 @@
       flex-wrap: wrap;
     }
 
+    .manual-ie {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) auto;
+      gap: 10px;
+      align-items: end;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid #bfdbfe;
+    }
+
+    .manual-ie label {
+      display: block;
+      color: #1e3a8a;
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    .manual-ie small {
+      display: block;
+      color: #475569;
+      margin-top: 6px;
+      font-size: 12px;
+    }
+
     .section-title {
-      margin: 26px 0 10px;
-      padding-bottom: 7px;
-      border-bottom: 2px solid #e5e7eb;
-      color: #1d4ed8;
+      margin: 28px 0 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #e5e7eb;
+      color: #0f3f8f;
       font-size: 17px;
       font-weight: 700;
     }
@@ -409,10 +539,10 @@
 
     .field {
       border: 1px solid var(--line);
-      border-radius: 6px;
-      background: var(--soft);
-      padding: 11px 12px;
-      min-height: 62px;
+      border-radius: 10px;
+      background: #fbfdff;
+      padding: 12px 13px;
+      min-height: 66px;
     }
 
     .field.full { grid-column: 1 / -1; }
@@ -432,7 +562,7 @@
 
     .risk-panel {
       border: 1px solid var(--warning-line);
-      border-radius: 8px;
+      border-radius: 12px;
       background: var(--warning-bg);
       padding: 14px;
     }
@@ -449,7 +579,7 @@
 
     .decision-panel {
       border: 1px solid var(--line);
-      border-radius: 8px;
+      border-radius: 12px;
       background: #f8fafc;
       padding: 14px;
     }
@@ -464,7 +594,7 @@
     details {
       margin-top: 24px;
       border: 1px solid var(--line);
-      border-radius: 8px;
+      border-radius: 12px;
       background: var(--soft);
       padding: 0;
     }
@@ -512,16 +642,18 @@
     @media (max-width: 820px) {
       .container { padding: 22px 16px; }
       h1 { font-size: 25px; }
-      .search, .summary, .grid, .grid.three, .auth-fields { grid-template-columns: 1fr; }
+      .app-header { flex-direction: column; }
+      .header-meta { text-align: left; }
+      .search, .summary, .grid, .grid.three, .auth-fields, .manual-ie { grid-template-columns: 1fr; }
       .sync-panel { align-items: stretch; flex-direction: column; }
-      .history-tools, .history-manager-actions { flex-direction: column; }
+      .support-actions, .support-actions-left, .history-manager-actions { align-items: stretch; flex-direction: column; }
       button { width: 100%; }
     }
 
     @media print {
       body { background: #fff; padding: 0; }
       .container { box-shadow: none; max-width: none; border-radius: 0; }
-      .search, .sync-panel, .firebase-diagnostics, .auth-panel, .history-tools, .history-manager, .history, .toolbar, .decision-actions, .message, .toast { display: none !important; }
+      .search-panel, .support-actions, .settings-details, .history-manager, .history, .toolbar, .decision-actions, .message, .toast { display: none !important; }
       .summary { display: grid !important; }
       .result { display: block !important; }
       details { break-inside: avoid; }
@@ -532,45 +664,64 @@
 </head>
 <body>
   <main class="container">
-    <h1>Consulta CNPJ + Sintegra</h1>
-    <p class="subtitle">Primeiro confirma a existência do CNPJ na ReceitaWS; depois usa a UF encontrada para abrir o Sintegra correto.</p>
-
-    <div class="search">
-      <input id="cnpjInput" type="text" inputmode="numeric" autocomplete="off" maxlength="18" placeholder="Digite o CNPJ">
-      <button id="consultarBtn" type="button">Consultar</button>
-    </div>
-
-    <div class="history-tools">
-      <button id="abrirHistoricoBtn" type="button" class="ghost-button">Consultar histórico</button>
-      <button id="sincronizarHistoricoBtn" type="button" class="ghost-button">Sincronizar histórico</button>
-    </div>
-
-    <div class="sync-panel">
+    <header class="app-header">
       <div>
-        <strong>Sincronização</strong>
-        <span id="firebaseStatus">Firebase não configurado. Salvando apenas neste dispositivo.</span>
+        <span class="brand-kicker"><span class="brand-dot"></span> Uso interno</span>
+        <h1>Consulta de CNPJ</h1>
+        <p class="subtitle">Validação cadastral, inscrição estadual, Sintegra e apoio à decisão comercial em uma única ficha.</p>
       </div>
-      <button id="testarFirebaseBtn" type="button" class="ghost-button">Testar Firebase</button>
-      <button id="copiarRegrasFirebaseBtn" type="button" class="ghost-button">Copiar regras de teste</button>
+      <div class="header-meta">
+        Winner Horse<br>
+        Cadastro, crédito e comercial
+      </div>
+    </header>
+
+    <div class="search-panel">
+      <div class="search">
+        <input id="cnpjInput" type="text" inputmode="numeric" autocomplete="off" maxlength="18" placeholder="Digite o CNPJ">
+        <button id="consultarBtn" type="button">Consultar</button>
+      </div>
+      <p class="search-help">Digite apenas os números ou cole o CNPJ formatado. Ex.: 64.932.268/0001-44</p>
     </div>
 
-    <div id="firebaseDiagnostics" class="firebase-diagnostics">
-      <strong>Diagnóstico do Firebase</strong>
-      <span id="firebaseDiagnosticsText"></span>
-      <code id="firebaseDiagnosticsCode"></code>
+    <div class="support-actions">
+      <div class="support-actions-left">
+        <button id="abrirHistoricoBtn" type="button" class="ghost-button">Ver histórico</button>
+        <button id="sincronizarHistoricoBtn" type="button" class="ghost-button">Sincronizar</button>
+      </div>
     </div>
 
-    <div class="auth-panel">
-      <strong>Acesso</strong>
-      <div class="auth-fields">
-        <input id="authEmail" type="email" autocomplete="username" placeholder="E-mail">
-        <input id="authPassword" type="password" autocomplete="current-password" placeholder="Senha">
-        <button id="loginBtn" type="button">Entrar</button>
-        <button id="criarLoginBtn" type="button" class="ghost-button">Criar acesso</button>
-        <button id="sairBtn" type="button" class="ghost-button">Sair</button>
+    <details class="settings-details">
+      <summary>Configurações, acesso e sincronização</summary>
+      <div class="settings-content">
+        <div class="sync-panel">
+          <div>
+            <strong>Sincronização</strong>
+            <span id="firebaseStatus">Firebase não configurado. Salvando apenas neste dispositivo.</span>
+          </div>
+          <button id="testarFirebaseBtn" type="button" class="ghost-button">Testar Firebase</button>
+          <button id="copiarRegrasFirebaseBtn" type="button" class="ghost-button">Copiar regras de teste</button>
+        </div>
+
+        <div id="firebaseDiagnostics" class="firebase-diagnostics">
+          <strong>Diagnóstico do Firebase</strong>
+          <span id="firebaseDiagnosticsText"></span>
+          <code id="firebaseDiagnosticsCode"></code>
+        </div>
+
+        <div class="auth-panel">
+          <strong>Acesso</strong>
+          <div class="auth-fields">
+            <input id="authEmail" type="email" autocomplete="username" placeholder="E-mail">
+            <input id="authPassword" type="password" autocomplete="current-password" placeholder="Senha">
+            <button id="loginBtn" type="button">Entrar</button>
+            <button id="criarLoginBtn" type="button" class="ghost-button">Criar acesso</button>
+            <button id="sairBtn" type="button" class="ghost-button">Sair</button>
+          </div>
+          <span id="authStatus" class="auth-status">Sem login. Firebase pode funcionar com regras abertas, mas o ideal é usar autenticação.</span>
+        </div>
       </div>
-      <span id="authStatus" class="auth-status">Sem login. Firebase pode funcionar com regras abertas, mas o ideal é usar autenticação.</span>
-    </div>
+    </details>
 
     <div id="historyManager" class="history-manager">
       <strong>Histórico registrado</strong>
@@ -607,9 +758,13 @@
     <div id="message" class="message"></div>
 
     <section id="summary" class="summary">
-      <div class="summary-card">
+      <div class="summary-card primary">
         <strong>Situação</strong>
         <span id="resumoSituacao"></span>
+      </div>
+      <div class="summary-card">
+        <strong>Inscrição Estadual</strong>
+        <span id="resumoIe"></span>
       </div>
       <div class="summary-card">
         <strong>Simples</strong>
@@ -627,6 +782,10 @@
         <strong>Atualização</strong>
         <span id="resumoAtualizacao"></span>
       </div>
+      <div class="summary-card">
+        <strong>Status comercial</strong>
+        <span id="resumoStatusComercial">Não analisado</span>
+      </div>
     </section>
 
     <section id="result" class="result">
@@ -636,16 +795,24 @@
         <button id="imprimirBtn" type="button" class="ghost-button">Gerar ficha / PDF</button>
       </div>
 
-      <div class="section-title">Consulta Sintegra</div>
+      <div class="section-title">Validação estadual / Inscrição Estadual</div>
       <div class="sintegra-panel">
         <p id="sintegraStatus">Após confirmar o CNPJ na Receita, abra a consulta estadual do Sintegra.</p>
         <div class="sintegra-actions">
           <button id="abrirSintegraBtn" type="button">Abrir Sintegra da UF</button>
           <button id="copiarCnpjSintegraBtn" type="button" class="ghost-button">Copiar CNPJ para colar no Sintegra</button>
         </div>
+        <div class="manual-ie">
+          <div>
+            <label for="inscricaoEstadualManual">Inscrição Estadual encontrada no Sintegra</label>
+            <input id="inscricaoEstadualManual" type="text" autocomplete="off" placeholder="Cole ou digite a IE">
+            <small>Depois de consultar o Sintegra, salve aqui a IE para aparecer na ficha e no histórico.</small>
+          </div>
+          <button id="salvarInscricaoEstadualBtn" type="button">Salvar IE</button>
+        </div>
       </div>
 
-      <div class="section-title">Alertas de risco básico</div>
+      <div class="section-title">Alertas importantes</div>
       <div id="riskPanel" class="risk-panel">
         <ul id="riskList"></ul>
       </div>
@@ -685,6 +852,7 @@
             <select id="statusComercial">
               <option value="Não analisado">Não analisado</option>
               <option value="Liberado">Liberado</option>
+              <option value="Faturado">Faturado</option>
               <option value="PIX à vista">PIX à vista</option>
               <option value="Analisar crédito">Analisar crédito</option>
               <option value="Não vender no prazo">Não vender no prazo</option>
@@ -763,7 +931,7 @@
       </div>
 
       <details>
-        <summary>Dados técnicos do ReceitaWS</summary>
+        <summary>Dados técnicos da consulta</summary>
         <div class="details-content">
           <div class="grid">
             <div class="field"><strong>Status</strong><span data-field="status"></span></div>
@@ -827,6 +995,35 @@
     const statusComercial = document.getElementById('statusComercial');
     const observacoesCredito = document.getElementById('observacoesCredito');
     const decisaoAtualizacao = document.getElementById('decisaoAtualizacao');
+    const inscricaoEstadualManual = document.getElementById('inscricaoEstadualManual');
+    const salvarInscricaoEstadualBtn = document.getElementById('salvarInscricaoEstadualBtn');
+
+    function aoClicarOuDigitar(elemento, evento, acao) {
+      if (elemento) elemento.addEventListener(evento, acao);
+    }
+
+    function exibir(elemento, modo) {
+      if (elemento && elemento.style) elemento.style.display = modo;
+    }
+
+    function definirTextoPorId(id, valor) {
+      const elemento = document.getElementById(id);
+      if (elemento) elemento.textContent = texto(valor);
+    }
+
+    function definirTextoLivrePorId(id, valor) {
+      const elemento = document.getElementById(id);
+      if (elemento) elemento.textContent = valor || '';
+    }
+
+    function definirHtmlPorId(id, valor) {
+      const elemento = document.getElementById(id);
+      if (elemento) elemento.innerHTML = valor || '';
+    }
+
+    function estruturaMinimaOk() {
+      return Boolean(input && button && message && result && summary);
+    }
 
     let dadosAtuais = null;
     let historicoAtual = [];
@@ -847,36 +1044,37 @@
       measurementId: 'G-2R97SNB7VC'
     };
 
-    input.addEventListener('input', function () {
+    aoClicarOuDigitar(input, 'input', function () {
       input.value = formatarCnpj(input.value);
     });
 
-    input.addEventListener('keydown', function (event) {
+    aoClicarOuDigitar(input, 'keydown', function (event) {
       if (event.key === 'Enter') consultarCnpj();
     });
 
-    button.addEventListener('click', consultarCnpj);
-    copiarBtn.addEventListener('click', copiarResumo);
-    copiarCnpjBtn.addEventListener('click', copiarCnpjAtual);
-    copiarCnpjSintegraBtn.addEventListener('click', copiarCnpjAtual);
-    abrirSintegraBtn.addEventListener('click', abrirSintegraAtual);
-    abrirHistoricoBtn.addEventListener('click', abrirHistorico);
-    sincronizarHistoricoBtn.addEventListener('click', function () {
+    aoClicarOuDigitar(button, 'click', consultarCnpj);
+    aoClicarOuDigitar(copiarBtn, 'click', copiarResumo);
+    aoClicarOuDigitar(copiarCnpjBtn, 'click', copiarCnpjAtual);
+    aoClicarOuDigitar(copiarCnpjSintegraBtn, 'click', copiarCnpjAtual);
+    aoClicarOuDigitar(abrirSintegraBtn, 'click', abrirSintegraAtual);
+    aoClicarOuDigitar(abrirHistoricoBtn, 'click', abrirHistorico);
+    aoClicarOuDigitar(sincronizarHistoricoBtn, 'click', function () {
       sincronizarHistoricoFirebase(true);
     });
-    alterarHistoricoBtn.addEventListener('click', alterarHistoricoSelecionado);
-    excluirHistoricoBtn.addEventListener('click', excluirHistoricoSelecionado);
-    historySearch.addEventListener('input', renderizarHistorico);
-    fecharHistoricoBtn.addEventListener('click', function () {
-      historyManager.style.display = 'none';
+    aoClicarOuDigitar(alterarHistoricoBtn, 'click', alterarHistoricoSelecionado);
+    aoClicarOuDigitar(excluirHistoricoBtn, 'click', excluirHistoricoSelecionado);
+    aoClicarOuDigitar(historySearch, 'input', renderizarHistorico);
+    aoClicarOuDigitar(fecharHistoricoBtn, 'click', function () {
+      exibir(historyManager, 'none');
     });
-    imprimirBtn.addEventListener('click', function () { window.print(); });
-    salvarDecisaoBtn.addEventListener('click', salvarDecisao);
-    testarFirebaseBtn.addEventListener('click', testarFirebase);
-    copiarRegrasFirebaseBtn.addEventListener('click', copiarRegrasFirebase);
-    loginBtn.addEventListener('click', entrarFirebase);
-    criarLoginBtn.addEventListener('click', criarAcessoFirebase);
-    sairBtn.addEventListener('click', sairFirebase);
+    aoClicarOuDigitar(imprimirBtn, 'click', function () { window.print(); });
+    aoClicarOuDigitar(salvarDecisaoBtn, 'click', salvarDecisao);
+    aoClicarOuDigitar(salvarInscricaoEstadualBtn, 'click', salvarInscricaoEstadualManual);
+    aoClicarOuDigitar(testarFirebaseBtn, 'click', testarFirebase);
+    aoClicarOuDigitar(copiarRegrasFirebaseBtn, 'click', copiarRegrasFirebase);
+    aoClicarOuDigitar(loginBtn, 'click', entrarFirebase);
+    aoClicarOuDigitar(criarLoginBtn, 'click', criarAcessoFirebase);
+    aoClicarOuDigitar(sairBtn, 'click', sairFirebase);
     iniciarFirebase();
     carregarHistorico();
 
@@ -886,7 +1084,7 @@
 
     async function iniciarFirebase() {
       if (!firebaseConfigurado()) {
-        firebaseStatus.textContent = 'Firebase não configurado. Salvando apenas neste dispositivo.';
+        definirTextoLivrePorId('firebaseStatus', 'Firebase não configurado. Salvando apenas neste dispositivo.');
         return;
       }
 
@@ -902,11 +1100,11 @@
         firebaseAuth = authModule.getAuth(app);
         authApi = authModule;
         firebasePronto = true;
-        firebaseStatus.textContent = 'Firebase conectado. Decisões e histórico podem sincronizar entre dispositivos.';
+        definirTextoLivrePorId('firebaseStatus', 'Firebase conectado. Decisões e histórico podem sincronizar entre dispositivos.');
         configurarAuth();
         sincronizarHistoricoFirebase(false);
       } catch (erro) {
-        firebaseStatus.textContent = 'Não foi possível conectar ao Firebase. Conferir configuração e regras.';
+        definirTextoLivrePorId('firebaseStatus', 'Não foi possível conectar ao Firebase. Conferir configuração e regras.');
         mostrarErroFirebase('Falha ao carregar/conectar o Firebase.', erro);
         console.error(erro);
       }
@@ -935,9 +1133,12 @@
 
       authApi.onAuthStateChanged(firebaseAuth, function (user) {
         firebaseUser = user || null;
-        authStatus.textContent = user
-          ? 'Conectado como ' + (user.email || 'usuário sem e-mail') + '.'
-          : 'Sem login. Para regras seguras, entre com e-mail e senha.';
+        definirTextoLivrePorId(
+          'authStatus',
+          user
+            ? 'Conectado como ' + (user.email || 'usuário sem e-mail') + '.'
+            : 'Sem login. Para regras seguras, entre com e-mail e senha.'
+        );
         carregarHistorico();
       });
     }
@@ -992,8 +1193,8 @@
         const leitura = await firebaseApi.getDoc(testeRef);
         if (!leitura.exists()) throw new Error('Gravou, mas não conseguiu ler o documento de teste.');
 
-        firebaseDiagnostics.style.display = 'none';
-        firebaseStatus.textContent = 'Firebase OK: gravação e leitura funcionando.';
+        exibir(firebaseDiagnostics, 'none');
+        definirTextoLivrePorId('firebaseStatus', 'Firebase OK: gravação e leitura funcionando.');
         mostrarToast('Firebase OK: gravou e leu.');
       } catch (erro) {
         console.error(erro);
@@ -1011,10 +1212,10 @@
     }
 
     function mostrarErroFirebase(titulo, erro) {
-      firebaseDiagnostics.style.display = 'block';
-      firebaseDiagnosticsText.textContent = titulo;
-      firebaseDiagnosticsCode.textContent = erroFirebaseTexto(erro);
-      firebaseStatus.textContent = titulo;
+      exibir(firebaseDiagnostics, 'block');
+      definirTextoLivrePorId('firebaseDiagnosticsText', titulo);
+      definirTextoLivrePorId('firebaseDiagnosticsCode', erroFirebaseTexto(erro));
+      definirTextoLivrePorId('firebaseStatus', titulo);
     }
 
     function regrasFirebaseTeste() {
@@ -1065,20 +1266,44 @@ service cloud.firestore {
     }
 
     function limparTela() {
+      if (!message) return;
       message.className = 'message';
       message.textContent = '';
-      message.style.display = 'none';
-      result.style.display = 'none';
-      summary.style.display = 'none';
+      exibir(message, 'none');
+      exibir(result, 'none');
+      exibir(summary, 'none');
     }
 
     function mostrarMensagem(tipo, textoMensagem) {
+      if (!message) {
+        window.alert(textoMensagem);
+        return;
+      }
       message.className = 'message ' + tipo;
       message.textContent = textoMensagem;
-      message.style.display = 'block';
+      exibir(message, 'block');
+    }
+
+    function mensagemErroUsuario(erro) {
+      const mensagem = String(erro && erro.message ? erro.message : erro || '');
+      const mensagemTecnica = /Cannot|undefined|null|TypeError|ReferenceError|SyntaxError|FirebaseError/i.test(mensagem);
+
+      if (mensagemTecnica) {
+        return 'Não foi possível concluir a consulta agora. Atualize a página e tente novamente.';
+      }
+
+      if (/too many requests|limite|rate/i.test(mensagem)) {
+        return 'A base de consulta atingiu o limite temporário. Aguarde alguns minutos e tente novamente.';
+      }
+
+      return mensagem || 'Não foi possível consultar agora. Verifique o CNPJ ou tente novamente em instantes.';
     }
 
     function mostrarToast(textoMensagem) {
+      if (!toast) {
+        console.log(textoMensagem);
+        return;
+      }
       toast.textContent = textoMensagem;
       toast.className = 'toast show';
       window.setTimeout(function () {
@@ -1131,7 +1356,18 @@ service cloud.firestore {
       return Number.isNaN(numero) ? null : numero;
     }
 
+    function chaveInscricaoEstadualManual(cnpj) {
+      return 'inscricaoEstadualManual_' + somenteNumeros(cnpj);
+    }
+
+    function obterInscricaoEstadualManual(cnpj) {
+      return localStorage.getItem(chaveInscricaoEstadualManual(cnpj)) || '';
+    }
+
     function obterInscricaoEstadual(dados) {
+      const manual = dados && dados.cnpj ? obterInscricaoEstadualManual(dados.cnpj) : '';
+      if (manual) return manual;
+
       const candidatos = [
         dados.inscricao_estadual,
         dados.inscricaoEstadual,
@@ -1365,6 +1601,69 @@ service cloud.firestore {
       return 'decisaoComercial_' + somenteNumeros(cnpj);
     }
 
+    function atualizarResumoStatusComercial(valor) {
+      const elemento = document.getElementById('resumoStatusComercial');
+      if (!elemento) return;
+      elemento.textContent = valor || 'Não analisado';
+      elemento.className = valor === 'Liberado' || valor === 'Faturado' ? 'ok' : valor && valor !== 'Não analisado' ? 'warn' : '';
+    }
+
+    function atualizarInscricaoEstadualNaTela(dados) {
+      const ie = obterInscricaoEstadual(dados);
+      definirTextoPorId('inscricaoEstadual', ie);
+      definirTextoPorId('resumoIe', ie);
+      if (inscricaoEstadualManual) {
+        inscricaoEstadualManual.value = obterInscricaoEstadualManual(dados.cnpj);
+      }
+    }
+
+    async function carregarInscricaoEstadualManual(cnpj) {
+      if (!inscricaoEstadualManual) return;
+
+      let manual = obterInscricaoEstadualManual(cnpj);
+
+      if (!manual && firebasePronto) {
+        try {
+          const docRef = firebaseApi.doc(firebaseDb, 'fichas_cnpj', cnpj);
+          const registro = await firebaseApi.getDoc(docRef);
+          if (registro.exists() && registro.data().inscricaoEstadualManual) {
+            manual = registro.data().inscricaoEstadualManual;
+            localStorage.setItem(chaveInscricaoEstadualManual(cnpj), manual);
+          }
+        } catch (erro) {
+          console.error(erro);
+        }
+      }
+
+      inscricaoEstadualManual.value = manual;
+    }
+
+    function salvarInscricaoEstadualManual() {
+      if (!dadosAtuais) {
+        mostrarToast('Consulte um CNPJ antes de salvar a IE.');
+        return;
+      }
+
+      const cnpj = somenteNumeros(dadosAtuais.cnpj);
+      const ie = inscricaoEstadualManual ? inscricaoEstadualManual.value.trim() : '';
+
+      if (!ie) {
+        mostrarToast('Informe a Inscrição Estadual encontrada no Sintegra.');
+        return;
+      }
+
+      localStorage.setItem(chaveInscricaoEstadualManual(cnpj), ie);
+      if (statusSintegra && statusSintegra.value === 'Pendente') {
+        statusSintegra.value = 'Validado';
+      }
+
+      atualizarInscricaoEstadualNaTela(dadosAtuais);
+      preencherAlertas(dadosAtuais);
+      salvarDecisao();
+      salvarNoHistorico(dadosAtuais);
+      mostrarToast(firebasePronto ? 'IE salva e sincronizando.' : 'IE salva neste navegador.');
+    }
+
     async function carregarDecisao(cnpj) {
       const salvo = localStorage.getItem(chaveDecisao(cnpj));
       if (!salvo) {
@@ -1374,14 +1673,21 @@ service cloud.firestore {
         statusComercial.value = 'Não analisado';
         observacoesCredito.value = '';
         decisaoAtualizacao.textContent = 'Não informado';
+        atualizarResumoStatusComercial('Não analisado');
       } else {
-        const decisao = JSON.parse(salvo);
+        let decisao = {};
+        try {
+          decisao = JSON.parse(salvo) || {};
+        } catch (erro) {
+          decisao = {};
+        }
         statusReceita.value = decisao.statusReceita || 'Confirmado';
         statusSintegra.value = decisao.statusSintegra || 'Pendente';
         statusCredito.value = decisao.statusCredito || 'Pendente';
         statusComercial.value = decisao.status || 'Não analisado';
         observacoesCredito.value = decisao.observacoes || '';
         decisaoAtualizacao.textContent = decisao.atualizadoEm || 'Não informado';
+        atualizarResumoStatusComercial(statusComercial.value);
       }
 
       if (!firebasePronto) return;
@@ -1398,6 +1704,7 @@ service cloud.firestore {
         statusComercial.value = decisaoFirebase.status || 'Não analisado';
         observacoesCredito.value = decisaoFirebase.observacoes || '';
         decisaoAtualizacao.textContent = decisaoFirebase.atualizadoEm || 'Não informado';
+        atualizarResumoStatusComercial(statusComercial.value);
         localStorage.setItem(chaveDecisao(cnpj), JSON.stringify(decisaoFirebase));
       } catch (erro) {
         console.error(erro);
@@ -1420,6 +1727,7 @@ service cloud.firestore {
 
       localStorage.setItem(chaveDecisao(cnpj), JSON.stringify(decisao));
       decisaoAtualizacao.textContent = atualizadoEm;
+      atualizarResumoStatusComercial(decisao.status);
       mostrarToast(firebasePronto ? 'Decisão salva. Sincronizando...' : 'Decisão salva neste navegador.');
       executarEmSegundoPlano(salvarFichaFirebase(dadosAtuais, decisao));
     }
@@ -1461,6 +1769,7 @@ service cloud.firestore {
     }
 
     function selecionarHistorico(cnpj) {
+      if (!historySelect || !historyTableBody) return;
       historySelect.value = cnpj;
       Array.from(historyTableBody.querySelectorAll('tr')).forEach(function (linha) {
         linha.className = linha.dataset.cnpj === cnpj ? 'selected' : '';
@@ -1468,6 +1777,7 @@ service cloud.firestore {
     }
 
     function renderizarHistorico() {
+      if (!historyTableBody || !historySelect) return;
       historyTableBody.innerHTML = '';
       historySelect.innerHTML = '';
 
@@ -1506,7 +1816,7 @@ service cloud.firestore {
 
     async function abrirHistorico() {
       await carregarHistorico();
-      historyManager.style.display = 'block';
+      exibir(historyManager, 'block');
       if (!historicoAtual.length) mostrarToast('Nenhum histórico registrado ainda.');
     }
 
@@ -1522,7 +1832,7 @@ service cloud.firestore {
       }
 
       input.value = formatarCnpj(cnpj);
-      historyManager.style.display = 'none';
+      exibir(historyManager, 'none');
       consultarCnpj();
     }
 
@@ -1539,6 +1849,7 @@ service cloud.firestore {
 
       salvarHistoricoLocal(historico);
       localStorage.removeItem(chaveDecisao(cnpj));
+      localStorage.removeItem(chaveInscricaoEstadualManual(cnpj));
       carregarHistorico();
       mostrarToast('Histórico excluído.');
 
@@ -1561,11 +1872,11 @@ service cloud.firestore {
         }
 
         await carregarHistorico();
-        firebaseStatus.textContent = 'Firebase conectado. Histórico sincronizado entre dispositivos.';
+        definirTextoLivrePorId('firebaseStatus', 'Firebase conectado. Histórico sincronizado entre dispositivos.');
         if (manual) mostrarToast('Histórico sincronizado.');
       } catch (erro) {
         console.error(erro);
-        firebaseStatus.textContent = 'Firebase conectado, mas não conseguiu sincronizar. Conferir regras do Firestore.';
+        definirTextoLivrePorId('firebaseStatus', 'Firebase conectado, mas não conseguiu sincronizar. Conferir regras do Firestore.');
         if (manual) mostrarToast('Falha ao sincronizar histórico.');
       }
     }
@@ -1614,25 +1925,26 @@ service cloud.firestore {
               nome: dados.nome || dados.fantasia || documento.id,
               uf: dados.uf || '',
               situacao: dados.situacao || '',
-              status: decisao.status || '',
+              status: decisao.status || dados.status || '',
               responsavel: dados.responsavel || decisao.responsavel || '',
               data: dados.ultimaConsulta || ''
             };
           });
           salvarHistoricoLocal(historico);
-          firebaseStatus.textContent = 'Firebase conectado. Histórico carregado da nuvem.';
+          definirTextoLivrePorId('firebaseStatus', 'Firebase conectado. Histórico carregado da nuvem.');
         } catch (erro) {
           console.error(erro);
-          firebaseStatus.textContent = 'Firebase conectado, mas o histórico da nuvem não carregou. Conferir regras do Firestore.';
+          definirTextoLivrePorId('firebaseStatus', 'Firebase conectado, mas o histórico da nuvem não carregou. Conferir regras do Firestore.');
           mostrarToast('Histórico da nuvem não carregou.');
         }
       }
 
       historicoAtual = historico;
-      historyList.innerHTML = '';
-      historyBox.style.display = historico.length ? 'block' : 'none';
+      if (historyList) historyList.innerHTML = '';
+      exibir(historyBox, historico.length ? 'block' : 'none');
 
       historico.slice(0, 8).forEach(function (registro) {
+        if (!historyList) return;
         const chip = document.createElement('button');
         chip.type = 'button';
         chip.className = 'history-chip';
@@ -1683,6 +1995,7 @@ service cloud.firestore {
         telefone: dados.telefone || '',
         email: dados.email || '',
         inscricaoEstadual: obterInscricaoEstadual(dados) || '',
+        inscricaoEstadualManual: obterInscricaoEstadualManual(cnpj) || '',
         alertas: gerarAlertas(dados),
         receitaWs: dados,
         responsavel: firebaseUser ? firebaseUser.email || firebaseUser.uid : 'Local',
@@ -1717,6 +2030,14 @@ service cloud.firestore {
     }
 
     async function consultarCnpj() {
+      if (!estruturaMinimaOk()) {
+        mostrarMensagem(
+          'error',
+          'A página está incompleta. Substitua o arquivo publicado pelo index.html corrigido completo.'
+        );
+        return;
+      }
+
       const cnpj = somenteNumeros(input.value);
       limparTela();
 
@@ -1725,7 +2046,11 @@ service cloud.firestore {
         return;
       }
 
-      button.disabled = true;
+      const textoOriginalBotao = button ? button.textContent : '';
+      if (button) {
+        button.disabled = true;
+        button.textContent = 'Consultando...';
+      }
       mostrarMensagem('info', 'Consultando ReceitaWS...');
 
       try {
@@ -1736,6 +2061,7 @@ service cloud.firestore {
         }
 
         dadosAtuais = dados;
+        await carregarInscricaoEstadualManual(cnpj);
 
         const campos = [
           'abertura',
@@ -1769,48 +2095,56 @@ service cloud.firestore {
         });
 
         preencherCampo('capital_social', capitalSocial(dados.capital_social));
-        document.getElementById('inscricaoEstadual').textContent = texto(obterInscricaoEstadual(dados));
+        atualizarInscricaoEstadualNaTela(dados);
         preencherLista('atividadePrincipal', dados.atividade_principal, 'Nenhuma atividade principal informada.');
         preencherLista('atividadesSecundarias', dados.atividades_secundarias, 'Nenhuma atividade secundária informada.');
         preencherLista('qsa', dados.qsa, 'Nenhum sócio informado no retorno.');
 
         const simples = dados.simples || {};
         const simei = dados.simei || {};
-        document.getElementById('simplesOptante').textContent = texto(simples.optante);
-        document.getElementById('simplesDataOpcao').textContent = texto(simples.data_opcao);
-        document.getElementById('simplesDataExclusao').textContent = texto(simples.data_exclusao);
-        document.getElementById('simplesAtualizacao').textContent = dataHora(simples.ultima_atualizacao);
-        document.getElementById('simeiOptante').textContent = texto(simei.optante);
-        document.getElementById('simeiDataOpcao').textContent = texto(simei.data_opcao);
-        document.getElementById('simeiDataExclusao').textContent = texto(simei.data_exclusao);
-        document.getElementById('simeiAtualizacao').textContent = dataHora(simei.ultima_atualizacao);
+        definirTextoPorId('simplesOptante', simples.optante);
+        definirTextoPorId('simplesDataOpcao', simples.data_opcao);
+        definirTextoPorId('simplesDataExclusao', simples.data_exclusao);
+        definirTextoLivrePorId('simplesAtualizacao', dataHora(simples.ultima_atualizacao));
+        definirTextoPorId('simeiOptante', simei.optante);
+        definirTextoPorId('simeiDataOpcao', simei.data_opcao);
+        definirTextoPorId('simeiDataExclusao', simei.data_exclusao);
+        definirTextoLivrePorId('simeiAtualizacao', dataHora(simei.ultima_atualizacao));
 
-        document.getElementById('billingFree').textContent = texto(dados.billing && dados.billing.free);
-        document.getElementById('billingDatabase').textContent = texto(dados.billing && dados.billing.database);
-        document.getElementById('extra').textContent = dados.extra && Object.keys(dados.extra).length
-          ? JSON.stringify(dados.extra, null, 2)
-          : 'Não informado';
+        definirTextoPorId('billingFree', dados.billing && dados.billing.free);
+        definirTextoPorId('billingDatabase', dados.billing && dados.billing.database);
+        definirTextoLivrePorId(
+          'extra',
+          dados.extra && Object.keys(dados.extra).length ? JSON.stringify(dados.extra, null, 2) : 'Não informado'
+        );
 
         const resumoSituacao = document.getElementById('resumoSituacao');
-        resumoSituacao.textContent = texto(dados.situacao);
-        resumoSituacao.className = String(dados.situacao || '').toUpperCase() === 'ATIVA' ? 'ok' : 'bad';
-        document.getElementById('resumoSimples').textContent = texto(simples.optante);
-        document.getElementById('resumoPorte').textContent = texto(dados.porte);
-        document.getElementById('resumoUf').textContent = texto(dados.uf);
-        document.getElementById('resumoAtualizacao').textContent = dataHora(dados.ultima_atualizacao);
+        if (resumoSituacao) {
+          resumoSituacao.textContent = texto(dados.situacao);
+          resumoSituacao.className = String(dados.situacao || '').toUpperCase() === 'ATIVA' ? 'ok' : 'bad';
+        }
+        definirTextoPorId('resumoIe', obterInscricaoEstadual(dados));
+        definirTextoPorId('resumoSimples', simples.optante);
+        definirTextoPorId('resumoPorte', dados.porte);
+        definirTextoPorId('resumoUf', dados.uf);
+        definirTextoLivrePorId('resumoAtualizacao', dataHora(dados.ultima_atualizacao));
+        atualizarResumoStatusComercial(statusComercial.value || 'Não analisado');
         atualizarSintegra(dados);
 
-        message.style.display = 'none';
-        summary.style.display = 'grid';
-        result.style.display = 'block';
+        exibir(message, 'none');
+        exibir(summary, 'grid');
+        exibir(result, 'block');
 
         preencherAlertas(dados);
         carregarDecisao(cnpj);
         salvarNoHistorico(dados);
       } catch (erro) {
-        mostrarMensagem('error', erro.message);
+        mostrarMensagem('error', mensagemErroUsuario(erro));
       } finally {
-        button.disabled = false;
+        if (button) {
+          button.disabled = false;
+          button.textContent = textoOriginalBotao || 'Consultar';
+        }
       }
     }
   </script>
