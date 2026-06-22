@@ -5,10 +5,11 @@ Aplicativo de página única para consultar CNPJ usando a API pública do Receit
 ## Recursos
 
 - Consulta pelo ReceitaWS via JSONP, compatível com uso direto no navegador.
-- Resumo no topo com situação cadastral, Simples Nacional, porte, UF e última atualização.
+- Resumo no topo com situação cadastral, Inscrição Estadual, Simples Nacional, porte, UF, última atualização, status comercial e anexo SERASA.
 - Etapa Sintegra: confirma o CNPJ, identifica a UF e abre o portal oficial do Sintegra para selecionar o estado correto.
 - Botão para copiar o CNPJ sem pontuação para colar no Sintegra.
 - Campo para inserir e salvar manualmente a Inscrição Estadual encontrada no Sintegra.
+- Anexo de PDF da consulta SERASA vinculado ao CNPJ consultado, com indicação no resumo e no histórico.
 - Registro automático das consultas realizadas.
 - Botão `Consultar histórico` para visualizar os registros salvos.
 - Botão `Sincronizar histórico` para enviar ao Firebase os registros que estavam salvos apenas no dispositivo atual.
@@ -18,9 +19,10 @@ Aplicativo de página única para consultar CNPJ usando a API pública do Receit
 - Alertas básicos de risco cadastral, como empresa não ativa, cadastro recente, ausência de telefone/e-mail e capital social baixo.
 - Recomendação interna salva no navegador: liberado, faturado, PIX à vista, analisar crédito, não vender no prazo ou cadastro incompleto.
 - Sincronização opcional com Firebase/Firestore para acessar decisões e histórico em mais de um dispositivo.
+- Sincronização opcional do PDF SERASA via Firebase Storage, quando as regras do Storage estiverem liberadas.
 - Login opcional via Firebase Authentication por e-mail/senha.
-- Histórico em tabela pesquisável por CNPJ, razão social, UF, situação, status comercial ou responsável.
-- Salvamento da ficha completa no Firebase, incluindo retorno ReceitaWS, alertas, validações e decisão interna.
+- Histórico em tabela pesquisável por CNPJ, razão social, UF, situação, status comercial, Serasa ou responsável.
+- Salvamento da ficha completa no Firebase, incluindo retorno ReceitaWS, alertas, validações, decisão interna e metadados do PDF SERASA.
 - Status de validação para Receita, Sintegra e Crédito.
 - Botão para copiar um resumo pronto para WhatsApp, cadastro ou análise interna.
 - Botão para gerar ficha/PDF pelo navegador.
@@ -33,6 +35,8 @@ Abra o arquivo `index.html`, digite o CNPJ e clique em `Consultar`. Se o CNPJ ex
 
 Depois de consultar o Sintegra, informe a Inscrição Estadual no campo `Inscrição Estadual encontrada no Sintegra` e clique em `Salvar IE`. A informação ficará salva na ficha, no resumo, no histórico local e, se o Firebase estiver ativo, também será sincronizada.
 
+Após consultar o SERASA, use o botão `Anexar PDF SERASA` para selecionar o relatório em PDF. O arquivo fica vinculado ao CNPJ consultado, aparece no resumo como `PDF anexado`, entra no histórico e pode ser aberto ou removido pela própria ficha. Localmente, o arquivo é salvo no navegador por IndexedDB. Se o Firebase Storage estiver habilitado e com regras válidas, o PDF também será enviado para a nuvem.
+
 Se consultas antigas não aparecerem em outro dispositivo, abra o app no dispositivo onde elas aparecem e clique em `Sincronizar histórico`.
 
 Observação: a API pública do ReceitaWS tem limite de consultas por minuto e pode retornar dados de cache.
@@ -42,13 +46,14 @@ Observação: a API pública do ReceitaWS tem limite de consultas por minuto e p
 O app já está com o `firebaseConfig` preenchido no arquivo `index.html`.
 
 1. Verifique se o Cloud Firestore está ativo no Firebase.
-2. Abra o app e clique em `Testar Firebase`.
-3. O teste agora precisa gravar e ler. Se falhar, o app mostra o diagnóstico do Firebase na tela.
-4. Se precisar testar regras abertas temporariamente, clique em `Copiar regras de teste` e cole nas regras do Cloud Firestore.
-5. Se o teste gravar corretamente, use `Sincronizar histórico` no dispositivo onde as consultas antigas aparecem.
-6. No outro dispositivo/usuário, clique em `Consultar histórico`.
+2. Para sincronizar PDFs SERASA entre dispositivos, verifique também se o Firebase Storage está ativo.
+3. Abra o app e clique em `Testar Firebase`.
+4. O teste agora precisa gravar e ler. Se falhar, o app mostra o diagnóstico do Firebase na tela.
+5. Se precisar testar regras abertas temporariamente, clique em `Copiar regras de teste`. O texto copiado inclui regras separadas para Cloud Firestore e Firebase Storage. Cole cada bloco no local correto do Firebase.
+6. Se o teste gravar corretamente, use `Sincronizar histórico` no dispositivo onde as consultas antigas aparecem.
+7. No outro dispositivo/usuário, clique em `Consultar histórico`.
 
-Para teste inicial, as regras do Firestore precisam permitir leitura e gravação. Em produção, use autenticação e regras restritas.
+Para teste inicial, as regras do Firestore precisam permitir leitura e gravação. Para anexos SERASA sincronizados, as regras do Storage também precisam permitir leitura e gravação na pasta `serasa_pdfs`. Em produção, use autenticação e regras restritas.
 
 ## Login e segurança
 
@@ -58,3 +63,8 @@ Para usar regras seguras:
 2. Em `Sign-in method`, habilite `Email/senha`.
 3. Crie o primeiro acesso pelo próprio app, no painel `Acesso`.
 4. Depois troque as regras abertas pelas regras de produção copiadas no botão `Copiar regras de teste`.
+
+
+## Observação sobre anexos SERASA
+
+O PDF pode conter informações sensíveis de crédito. Mantenha o acesso ao app e ao Firebase restrito aos usuários autorizados. Sem Firebase Storage, o anexo fica disponível apenas no navegador onde foi anexado; o histórico pode mostrar que existe um PDF, mas outro dispositivo não conseguirá abrir o arquivo até que ele seja anexado ou sincronizado pela nuvem.

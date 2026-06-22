@@ -391,7 +391,7 @@
     .history-table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 760px;
+      min-width: 900px;
       font-size: 14px;
     }
 
@@ -427,7 +427,7 @@
 
     .summary {
       display: none;
-      grid-template-columns: repeat(6, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
       gap: 12px;
       margin: 18px 0 22px;
     }
@@ -591,6 +591,58 @@
       margin-top: 12px;
     }
 
+    .serasa-panel {
+      border: 1px solid #d7e0ea;
+      border-radius: 12px;
+      background: #f8fafc;
+      padding: 14px;
+    }
+
+    .serasa-panel p {
+      margin: 0;
+      color: #334155;
+      line-height: 1.45;
+      font-size: 14px;
+    }
+
+    .serasa-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .serasa-file-input { display: none; }
+
+    .serasa-file-card {
+      display: none;
+      margin-top: 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #ffffff;
+      padding: 12px;
+    }
+
+    .serasa-file-card strong {
+      display: block;
+      color: #0f172a;
+      font-size: 14px;
+      overflow-wrap: anywhere;
+    }
+
+    .serasa-file-meta {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 5px;
+      line-height: 1.45;
+    }
+
+    .serasa-note {
+      margin-top: 10px !important;
+      color: var(--muted) !important;
+      font-size: 13px !important;
+    }
+
     details {
       margin-top: 24px;
       border: 1px solid var(--line);
@@ -646,14 +698,14 @@
       .header-meta { text-align: left; }
       .search, .summary, .grid, .grid.three, .auth-fields, .manual-ie { grid-template-columns: 1fr; }
       .sync-panel { align-items: stretch; flex-direction: column; }
-      .support-actions, .support-actions-left, .history-manager-actions { align-items: stretch; flex-direction: column; }
+      .support-actions, .support-actions-left, .history-manager-actions, .serasa-actions { align-items: stretch; flex-direction: column; }
       button { width: 100%; }
     }
 
     @media print {
       body { background: #fff; padding: 0; }
       .container { box-shadow: none; max-width: none; border-radius: 0; }
-      .search-panel, .support-actions, .settings-details, .history-manager, .history, .toolbar, .decision-actions, .message, .toast { display: none !important; }
+      .search-panel, .support-actions, .settings-details, .history-manager, .history, .toolbar, .decision-actions, .serasa-actions, .serasa-file-input, .message, .toast { display: none !important; }
       .summary { display: grid !important; }
       .result { display: block !important; }
       details { break-inside: avoid; }
@@ -725,7 +777,7 @@
 
     <div id="historyManager" class="history-manager">
       <strong>Histórico registrado</strong>
-      <input id="historySearch" class="history-search" type="text" placeholder="Buscar por CNPJ, razão social, UF ou status">
+      <input id="historySearch" class="history-search" type="text" placeholder="Buscar por CNPJ, razão social, UF, status ou Serasa">
       <select id="historySelect" size="6" style="display: none;"></select>
       <div class="history-table-wrap">
         <table class="history-table">
@@ -737,6 +789,7 @@
               <th>UF</th>
               <th>Situação</th>
               <th>Status comercial</th>
+              <th>Serasa</th>
               <th>Responsável</th>
             </tr>
           </thead>
@@ -785,6 +838,10 @@
       <div class="summary-card">
         <strong>Status comercial</strong>
         <span id="resumoStatusComercial">Não analisado</span>
+      </div>
+      <div class="summary-card">
+        <strong>Serasa</strong>
+        <span id="resumoSerasa">Sem anexo</span>
       </div>
     </section>
 
@@ -871,6 +928,22 @@
         <div class="decision-actions">
           <button id="salvarDecisaoBtn" type="button">Salvar decisão</button>
         </div>
+      </div>
+
+      <div class="section-title">Consulta SERASA</div>
+      <div class="serasa-panel">
+        <p>Anexe aqui o PDF da consulta ao SERASA para manter o comprovante vinculado ao CNPJ analisado.</p>
+        <input id="serasaPdfInput" class="serasa-file-input" type="file" accept="application/pdf,.pdf">
+        <div class="serasa-actions">
+          <button id="selecionarSerasaPdfBtn" type="button">Anexar PDF SERASA</button>
+          <button id="abrirSerasaPdfBtn" type="button" class="ghost-button" disabled>Abrir PDF</button>
+          <button id="removerSerasaPdfBtn" type="button" class="ghost-button" disabled>Remover anexo</button>
+        </div>
+        <div id="serasaPdfInfo" class="serasa-file-card">
+          <strong id="serasaPdfNome">Nenhum PDF anexado</strong>
+          <div id="serasaPdfMeta" class="serasa-file-meta"></div>
+        </div>
+        <p class="serasa-note">O anexo fica salvo neste navegador. Com Firebase Storage liberado, também pode ser sincronizado entre dispositivos.</p>
       </div>
 
       <div class="section-title">Dados principais</div>
@@ -997,6 +1070,13 @@
     const decisaoAtualizacao = document.getElementById('decisaoAtualizacao');
     const inscricaoEstadualManual = document.getElementById('inscricaoEstadualManual');
     const salvarInscricaoEstadualBtn = document.getElementById('salvarInscricaoEstadualBtn');
+    const serasaPdfInput = document.getElementById('serasaPdfInput');
+    const selecionarSerasaPdfBtn = document.getElementById('selecionarSerasaPdfBtn');
+    const abrirSerasaPdfBtn = document.getElementById('abrirSerasaPdfBtn');
+    const removerSerasaPdfBtn = document.getElementById('removerSerasaPdfBtn');
+    const serasaPdfInfo = document.getElementById('serasaPdfInfo');
+    const serasaPdfNome = document.getElementById('serasaPdfNome');
+    const serasaPdfMeta = document.getElementById('serasaPdfMeta');
 
     function aoClicarOuDigitar(elemento, evento, acao) {
       if (elemento) elemento.addEventListener(evento, acao);
@@ -1031,8 +1111,11 @@
     let firebaseApi = null;
     let firebaseAuth = null;
     let authApi = null;
+    let firebaseStorage = null;
+    let storageApi = null;
     let firebaseUser = null;
     let firebasePronto = false;
+    let serasaPdfObjectUrl = null;
 
     const firebaseConfig = {
       apiKey: 'AIzaSyBkXU9NCLdNXiCMLDEymoJwj0enrxxBIxc',
@@ -1070,6 +1153,10 @@
     aoClicarOuDigitar(imprimirBtn, 'click', function () { window.print(); });
     aoClicarOuDigitar(salvarDecisaoBtn, 'click', salvarDecisao);
     aoClicarOuDigitar(salvarInscricaoEstadualBtn, 'click', salvarInscricaoEstadualManual);
+    aoClicarOuDigitar(selecionarSerasaPdfBtn, 'click', selecionarSerasaPdf);
+    aoClicarOuDigitar(serasaPdfInput, 'change', anexarSerasaPdf);
+    aoClicarOuDigitar(abrirSerasaPdfBtn, 'click', abrirSerasaPdf);
+    aoClicarOuDigitar(removerSerasaPdfBtn, 'click', removerSerasaPdf);
     aoClicarOuDigitar(testarFirebaseBtn, 'click', testarFirebase);
     aoClicarOuDigitar(copiarRegrasFirebaseBtn, 'click', copiarRegrasFirebase);
     aoClicarOuDigitar(loginBtn, 'click', entrarFirebase);
@@ -1093,14 +1180,17 @@
         const appModule = modulos.appModule;
         const firestoreModule = modulos.firestoreModule;
         const authModule = modulos.authModule;
+        const storageModule = modulos.storageModule;
         const app = appModule.initializeApp(firebaseConfig);
 
         firebaseDb = firestoreModule.getFirestore(app);
         firebaseApi = firestoreModule;
         firebaseAuth = authModule.getAuth(app);
         authApi = authModule;
+        firebaseStorage = storageModule.getStorage(app);
+        storageApi = storageModule;
         firebasePronto = true;
-        definirTextoLivrePorId('firebaseStatus', 'Firebase conectado. Decisões e histórico podem sincronizar entre dispositivos.');
+        definirTextoLivrePorId('firebaseStatus', 'Firebase conectado. Decisões, histórico e anexos podem sincronizar entre dispositivos.');
         configurarAuth();
         sincronizarHistoricoFirebase(false);
       } catch (erro) {
@@ -1119,7 +1209,8 @@
           const appModule = await import('https://www.gstatic.com/firebasejs/' + versao + '/firebase-app.js');
           const firestoreModule = await import('https://www.gstatic.com/firebasejs/' + versao + '/firebase-firestore.js');
           const authModule = await import('https://www.gstatic.com/firebasejs/' + versao + '/firebase-auth.js');
-          return { appModule: appModule, firestoreModule: firestoreModule, authModule: authModule };
+          const storageModule = await import('https://www.gstatic.com/firebasejs/' + versao + '/firebase-storage.js');
+          return { appModule: appModule, firestoreModule: firestoreModule, authModule: authModule, storageModule: storageModule };
         } catch (erro) {
           ultimoErro = erro;
         }
@@ -1192,15 +1283,34 @@
 
         const leitura = await firebaseApi.getDoc(testeRef);
         if (!leitura.exists()) throw new Error('Gravou, mas não conseguiu ler o documento de teste.');
-
-        exibir(firebaseDiagnostics, 'none');
-        definirTextoLivrePorId('firebaseStatus', 'Firebase OK: gravação e leitura funcionando.');
-        mostrarToast('Firebase OK: gravou e leu.');
       } catch (erro) {
         console.error(erro);
         mostrarErroFirebase('Falha no teste de gravação/leitura. Normalmente é regra do Firestore.', erro);
         mostrarToast('Falha no Firebase. Veja o diagnóstico.');
+        return;
       }
+
+      if (storageApi && firebaseStorage) {
+        try {
+          const storageRef = storageApi.ref(firebaseStorage, 'serasa_pdfs/testes/conexao-storage.txt');
+          const arquivoTeste = new Blob(['Teste Firebase Storage'], { type: 'text/plain' });
+          await storageApi.uploadBytes(storageRef, arquivoTeste, { contentType: 'text/plain' });
+          try {
+            await storageApi.deleteObject(storageRef);
+          } catch (erroDelete) {
+            console.error(erroDelete);
+          }
+        } catch (erroStorage) {
+          console.error(erroStorage);
+          mostrarErroFirebase('Firestore OK, mas o Firebase Storage não gravou. Conferir regras do Storage para anexos PDF.', erroStorage);
+          mostrarToast('Firestore OK. Storage falhou.');
+          return;
+        }
+      }
+
+      exibir(firebaseDiagnostics, 'none');
+      definirTextoLivrePorId('firebaseStatus', 'Firebase OK: Firestore e Storage funcionando.');
+      mostrarToast('Firebase OK: Firestore e Storage.');
     }
 
     function erroFirebaseTexto(erro) {
@@ -1219,7 +1329,7 @@
     }
 
     function regrasFirebaseTeste() {
-      return `// TESTE TEMPORÁRIO - aberto
+      return `// FIRESTORE - TESTE TEMPORÁRIO - aberto
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -1227,6 +1337,16 @@ service cloud.firestore {
       allow read, write: if true;
     }
     match /testes/{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
+
+// STORAGE - TESTE TEMPORÁRIO - use nas regras do Firebase Storage se for sincronizar PDFs
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /serasa_pdfs/{allPaths=**} {
       allow read, write: if true;
     }
   }
@@ -1241,6 +1361,15 @@ service cloud.firestore {
       allow read, write: if request.auth != null;
     }
     match /testes/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /serasa_pdfs/{allPaths=**} {
       allow read, write: if request.auth != null;
     }
   }
@@ -1272,6 +1401,7 @@ service cloud.firestore {
       exibir(message, 'none');
       exibir(result, 'none');
       exibir(summary, 'none');
+      renderizarSerasaPdf(null);
     }
 
     function mostrarMensagem(tipo, textoMensagem) {
@@ -1520,6 +1650,7 @@ service cloud.firestore {
         'Sintegra: ' + texto(statusSintegra.value),
         'Crédito: ' + texto(statusCredito.value),
         'Status comercial: ' + texto(decisao.status || statusComercial.value),
+        'Consulta SERASA: ' + textoSerasaResumo(somenteNumeros(dados.cnpj)),
         'Observações: ' + texto(decisao.observacoes || observacoesCredito.value)
       ].join('\n');
     }
@@ -1606,6 +1737,336 @@ service cloud.firestore {
       if (!elemento) return;
       elemento.textContent = valor || 'Não analisado';
       elemento.className = valor === 'Liberado' || valor === 'Faturado' ? 'ok' : valor && valor !== 'Não analisado' ? 'warn' : '';
+    }
+
+    function chaveSerasaPdf(cnpj) {
+      return 'serasaPdf_' + somenteNumeros(cnpj);
+    }
+
+    function formatarTamanhoArquivo(bytes) {
+      const numero = Number(bytes || 0);
+      if (numero < 1024) return numero + ' B';
+      if (numero < 1024 * 1024) return (numero / 1024).toFixed(1).replace('.', ',') + ' KB';
+      return (numero / (1024 * 1024)).toFixed(2).replace('.', ',') + ' MB';
+    }
+
+    function dataHoraSerasa(valor) {
+      return dataHora(valor) === 'Não informado' ? new Date().toLocaleString('pt-BR') : dataHora(valor);
+    }
+
+    function nomeArquivoSeguro(nome) {
+      return String(nome || 'consulta-serasa.pdf')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9_.-]+/g, '_')
+        .replace(/^_+|_+$/g, '') || 'consulta-serasa.pdf';
+    }
+
+    function obterSerasaMetaLocal(cnpj) {
+      try {
+        return JSON.parse(localStorage.getItem(chaveSerasaPdf(cnpj))) || null;
+      } catch (erro) {
+        return null;
+      }
+    }
+
+    function salvarSerasaMetaLocal(cnpj, meta) {
+      if (!meta) {
+        localStorage.removeItem(chaveSerasaPdf(cnpj));
+        return;
+      }
+      const metaLimpa = Object.assign({}, meta);
+      delete metaLimpa.blob;
+      localStorage.setItem(chaveSerasaPdf(cnpj), JSON.stringify(metaLimpa));
+    }
+
+    function textoSerasaResumo(cnpj) {
+      const meta = obterSerasaMetaLocal(cnpj);
+      return meta ? 'PDF anexado - ' + texto(meta.nome) : 'Sem anexo';
+    }
+
+    function atualizarResumoSerasa(meta) {
+      const elemento = document.getElementById('resumoSerasa');
+      if (!elemento) return;
+      elemento.textContent = meta ? 'PDF anexado' : 'Sem anexo';
+      elemento.className = meta ? 'ok' : 'warn';
+    }
+
+    function renderizarSerasaPdf(meta) {
+      atualizarResumoSerasa(meta);
+
+      if (serasaPdfObjectUrl) {
+        URL.revokeObjectURL(serasaPdfObjectUrl);
+        serasaPdfObjectUrl = null;
+      }
+
+      if (!meta) {
+        exibir(serasaPdfInfo, 'none');
+        definirTextoLivrePorId('serasaPdfNome', 'Nenhum PDF anexado');
+        definirTextoLivrePorId('serasaPdfMeta', '');
+        if (abrirSerasaPdfBtn) abrirSerasaPdfBtn.disabled = true;
+        if (removerSerasaPdfBtn) removerSerasaPdfBtn.disabled = true;
+        return;
+      }
+
+      definirTextoLivrePorId('serasaPdfNome', meta.nome || 'Consulta SERASA.pdf');
+      definirTextoLivrePorId(
+        'serasaPdfMeta',
+        [
+          formatarTamanhoArquivo(meta.tamanho),
+          'Anexado em ' + dataHoraSerasa(meta.anexadoEm),
+          meta.origem ? 'Origem: ' + meta.origem : '',
+          meta.responsavel ? 'Responsável: ' + meta.responsavel : ''
+        ].filter(Boolean).join(' | ')
+      );
+      exibir(serasaPdfInfo, 'block');
+      if (abrirSerasaPdfBtn) abrirSerasaPdfBtn.disabled = false;
+      if (removerSerasaPdfBtn) removerSerasaPdfBtn.disabled = false;
+    }
+
+    function abrirBancoSerasa() {
+      return new Promise(function (resolve, reject) {
+        if (!window.indexedDB) {
+          reject(new Error('IndexedDB indisponível neste navegador.'));
+          return;
+        }
+
+        const requisicao = indexedDB.open('consultaCnpjSerasaDb', 1);
+        requisicao.onupgradeneeded = function () {
+          const db = requisicao.result;
+          if (!db.objectStoreNames.contains('serasaPdfs')) {
+            db.createObjectStore('serasaPdfs', { keyPath: 'cnpj' });
+          }
+        };
+        requisicao.onsuccess = function () { resolve(requisicao.result); };
+        requisicao.onerror = function () { reject(requisicao.error || new Error('Não foi possível abrir o banco local.')); };
+      });
+    }
+
+    async function salvarSerasaPdfLocal(cnpj, arquivo, meta) {
+      const db = await abrirBancoSerasa();
+      return new Promise(function (resolve, reject) {
+        const tx = db.transaction('serasaPdfs', 'readwrite');
+        tx.objectStore('serasaPdfs').put(Object.assign({}, meta, {
+          cnpj: cnpj,
+          blob: arquivo
+        }));
+        tx.oncomplete = function () { db.close(); resolve(); };
+        tx.onerror = function () { db.close(); reject(tx.error || new Error('Não foi possível salvar o PDF local.')); };
+      });
+    }
+
+    async function obterSerasaPdfLocal(cnpj) {
+      const db = await abrirBancoSerasa();
+      return new Promise(function (resolve, reject) {
+        const tx = db.transaction('serasaPdfs', 'readonly');
+        const requisicao = tx.objectStore('serasaPdfs').get(cnpj);
+        requisicao.onsuccess = function () { resolve(requisicao.result || null); };
+        requisicao.onerror = function () { reject(requisicao.error || new Error('Não foi possível ler o PDF local.')); };
+        tx.oncomplete = function () { db.close(); };
+      });
+    }
+
+    async function excluirSerasaPdfLocal(cnpj) {
+      const db = await abrirBancoSerasa();
+      return new Promise(function (resolve, reject) {
+        const tx = db.transaction('serasaPdfs', 'readwrite');
+        tx.objectStore('serasaPdfs').delete(cnpj);
+        tx.oncomplete = function () { db.close(); resolve(); };
+        tx.onerror = function () { db.close(); reject(tx.error || new Error('Não foi possível remover o PDF local.')); };
+      });
+    }
+
+    async function carregarSerasaPdf(cnpj) {
+      let meta = obterSerasaMetaLocal(cnpj);
+
+      if (firebasePronto) {
+        try {
+          const docRef = firebaseApi.doc(firebaseDb, 'fichas_cnpj', cnpj);
+          const registro = await firebaseApi.getDoc(docRef);
+          const dados = registro.exists() ? registro.data() : null;
+          if (dados && dados.serasaPdf) {
+            meta = dados.serasaPdf;
+            salvarSerasaMetaLocal(cnpj, meta);
+          }
+        } catch (erro) {
+          console.error(erro);
+        }
+      }
+
+      if (!meta) {
+        try {
+          const local = await obterSerasaPdfLocal(cnpj);
+          if (local) {
+            meta = Object.assign({}, local);
+            delete meta.blob;
+            salvarSerasaMetaLocal(cnpj, meta);
+          }
+        } catch (erro) {
+          console.error(erro);
+        }
+      }
+
+      renderizarSerasaPdf(meta);
+      return meta;
+    }
+
+    function selecionarSerasaPdf() {
+      if (!dadosAtuais) {
+        mostrarToast('Consulte um CNPJ antes de anexar o PDF do SERASA.');
+        return;
+      }
+      if (serasaPdfInput) serasaPdfInput.click();
+    }
+
+    async function anexarSerasaPdf(evento) {
+      if (!dadosAtuais) {
+        mostrarToast('Consulte um CNPJ antes de anexar o PDF do SERASA.');
+        return;
+      }
+
+      const arquivo = evento && evento.target && evento.target.files ? evento.target.files[0] : null;
+      if (!arquivo) return;
+
+      const nome = arquivo.name || 'consulta-serasa.pdf';
+      const ehPdf = arquivo.type === 'application/pdf' || nome.toLowerCase().endsWith('.pdf');
+      if (!ehPdf) {
+        mostrarToast('Anexe apenas arquivo PDF.');
+        if (serasaPdfInput) serasaPdfInput.value = '';
+        return;
+      }
+
+      const limite = 25 * 1024 * 1024;
+      if (arquivo.size > limite) {
+        mostrarToast('O PDF deve ter até 25 MB.');
+        if (serasaPdfInput) serasaPdfInput.value = '';
+        return;
+      }
+
+      const cnpj = somenteNumeros(dadosAtuais.cnpj);
+      const meta = {
+        nome: nome,
+        tamanho: arquivo.size,
+        tipo: arquivo.type || 'application/pdf',
+        anexadoEm: new Date().toISOString(),
+        origem: 'Local',
+        responsavel: firebaseUser ? firebaseUser.email || firebaseUser.uid : 'Local'
+      };
+
+      try {
+        await salvarSerasaPdfLocal(cnpj, arquivo, meta);
+        salvarSerasaMetaLocal(cnpj, meta);
+        renderizarSerasaPdf(meta);
+        salvarNoHistorico(dadosAtuais);
+        mostrarToast(firebasePronto && storageApi ? 'PDF anexado. Sincronizando...' : 'PDF anexado neste navegador.');
+
+        if (firebasePronto && storageApi && firebaseStorage) {
+          executarEmSegundoPlano(sincronizarSerasaPdfFirebase(cnpj, arquivo, meta));
+        } else {
+          executarEmSegundoPlano(salvarFichaFirebase(dadosAtuais));
+        }
+      } catch (erro) {
+        console.error(erro);
+        mostrarToast('Não foi possível salvar o PDF neste navegador.');
+      } finally {
+        if (serasaPdfInput) serasaPdfInput.value = '';
+      }
+    }
+
+    async function sincronizarSerasaPdfFirebase(cnpj, arquivo, meta) {
+      try {
+        const caminho = 'serasa_pdfs/' + cnpj + '/' + Date.now() + '_' + nomeArquivoSeguro(meta.nome);
+        const refArquivo = storageApi.ref(firebaseStorage, caminho);
+        await storageApi.uploadBytes(refArquivo, arquivo, { contentType: meta.tipo || 'application/pdf' });
+        const metaNuvem = Object.assign({}, meta, {
+          origem: 'Nuvem',
+          storagePath: caminho,
+          sincronizadoEm: new Date().toISOString()
+        });
+
+        salvarSerasaMetaLocal(cnpj, metaNuvem);
+        renderizarSerasaPdf(metaNuvem);
+        await firebaseApi.setDoc(firebaseApi.doc(firebaseDb, 'fichas_cnpj', cnpj), {
+          serasaPdf: metaNuvem
+        }, { merge: true });
+        await salvarFichaFirebase(dadosAtuais);
+        await carregarHistorico();
+        mostrarToast('PDF SERASA sincronizado.');
+      } catch (erro) {
+        console.error(erro);
+        mostrarToast('PDF salvo localmente, mas não sincronizou no Firebase Storage.');
+        await salvarFichaFirebase(dadosAtuais);
+      }
+    }
+
+    async function abrirSerasaPdf() {
+      if (!dadosAtuais) return;
+      const cnpj = somenteNumeros(dadosAtuais.cnpj);
+      const meta = obterSerasaMetaLocal(cnpj);
+
+      if (meta && meta.url) {
+        window.open(meta.url, '_blank', 'noopener');
+        return;
+      }
+
+      if (meta && meta.storagePath && storageApi && firebaseStorage) {
+        try {
+          const url = await storageApi.getDownloadURL(storageApi.ref(firebaseStorage, meta.storagePath));
+          window.open(url, '_blank', 'noopener');
+          return;
+        } catch (erro) {
+          console.error(erro);
+        }
+      }
+
+      try {
+        const local = await obterSerasaPdfLocal(cnpj);
+        if (local && local.blob) {
+          serasaPdfObjectUrl = URL.createObjectURL(local.blob);
+          window.open(serasaPdfObjectUrl, '_blank', 'noopener');
+          return;
+        }
+      } catch (erro) {
+        console.error(erro);
+      }
+
+      mostrarToast('PDF não encontrado neste dispositivo. Sincronize ou anexe novamente.');
+    }
+
+    async function removerSerasaPdf() {
+      if (!dadosAtuais) return;
+      const cnpj = somenteNumeros(dadosAtuais.cnpj);
+      const meta = obterSerasaMetaLocal(cnpj);
+
+      try {
+        await excluirSerasaPdfLocal(cnpj);
+      } catch (erro) {
+        console.error(erro);
+      }
+      salvarSerasaMetaLocal(cnpj, null);
+      renderizarSerasaPdf(null);
+      salvarNoHistorico(dadosAtuais);
+
+      if (firebasePronto && firebaseApi) {
+        try {
+          await firebaseApi.setDoc(firebaseApi.doc(firebaseDb, 'fichas_cnpj', cnpj), {
+            serasaPdf: firebaseApi.deleteField()
+          }, { merge: true });
+          if (meta && meta.storagePath && storageApi && firebaseStorage) {
+            try {
+              await storageApi.deleteObject(storageApi.ref(firebaseStorage, meta.storagePath));
+            } catch (erroStorage) {
+              console.error(erroStorage);
+            }
+          }
+        } catch (erro) {
+          console.error(erro);
+          mostrarToast('Anexo removido localmente, mas não foi possível remover da nuvem.');
+          return;
+        }
+      }
+
+      mostrarToast('PDF SERASA removido.');
     }
 
     function atualizarInscricaoEstadualNaTela(dados) {
@@ -1764,6 +2225,7 @@ service cloud.firestore {
         registro.uf,
         registro.situacao,
         registro.status,
+        registro.serasa,
         registro.responsavel
       ].join(' ').toLowerCase().includes(filtro);
     }
@@ -1802,6 +2264,7 @@ service cloud.firestore {
           '<td>' + texto(registro.uf) + '</td>' +
           '<td>' + texto(registro.situacao) + '</td>' +
           '<td>' + texto(registro.status) + '</td>' +
+          '<td>' + texto(registro.serasa || 'Sem anexo') + '</td>' +
           '<td>' + texto(registro.responsavel) + '</td>';
         linha.addEventListener('click', function () {
           selecionarHistorico(cnpj);
@@ -1850,6 +2313,8 @@ service cloud.firestore {
       salvarHistoricoLocal(historico);
       localStorage.removeItem(chaveDecisao(cnpj));
       localStorage.removeItem(chaveInscricaoEstadualManual(cnpj));
+      salvarSerasaMetaLocal(cnpj, null);
+      executarEmSegundoPlano(excluirSerasaPdfLocal(cnpj));
       carregarHistorico();
       mostrarToast('Histórico excluído.');
 
@@ -1889,6 +2354,7 @@ service cloud.firestore {
         uf: dados.uf || '',
         situacao: dados.situacao || '',
         status: statusComercial.value || 'Não analisado',
+        serasa: obterSerasaMetaLocal(cnpj) ? 'PDF anexado' : 'Sem anexo',
         responsavel: firebaseUser ? firebaseUser.email || firebaseUser.uid : 'Local',
         data: new Date().toISOString()
       };
@@ -1926,6 +2392,7 @@ service cloud.firestore {
               uf: dados.uf || '',
               situacao: dados.situacao || '',
               status: decisao.status || dados.status || '',
+              serasa: dados.serasaPdf ? 'PDF anexado' : dados.serasaResumo || 'Sem anexo',
               responsavel: dados.responsavel || decisao.responsavel || '',
               data: dados.ultimaConsulta || ''
             };
@@ -1983,6 +2450,8 @@ service cloud.firestore {
         }
       }
 
+      const serasaPdf = obterSerasaMetaLocal(cnpj);
+
       const payload = {
         cnpj: cnpj,
         cnpjFormatado: dados.cnpj || formatarCnpj(cnpj),
@@ -2003,6 +2472,7 @@ service cloud.firestore {
         ultimaConsultaMs: Date.now()
       };
 
+      if (serasaPdf) payload.serasaPdf = serasaPdf;
       if (decisao) payload.decisao = decisao;
 
       try {
@@ -2024,6 +2494,8 @@ service cloud.firestore {
         cnpj: cnpj,
         cnpjFormatado: formatarCnpj(cnpj),
         nome: registro.nome || '',
+        status: registro.status || '',
+        serasaResumo: registro.serasa || '',
         ultimaConsulta: dataRegistro,
         ultimaConsultaMs: Number.isNaN(dataMs) ? Date.now() : dataMs
       }, { merge: true });
@@ -2062,6 +2534,7 @@ service cloud.firestore {
 
         dadosAtuais = dados;
         await carregarInscricaoEstadualManual(cnpj);
+        await carregarSerasaPdf(cnpj);
 
         const campos = [
           'abertura',
@@ -2136,7 +2609,7 @@ service cloud.firestore {
         exibir(result, 'block');
 
         preencherAlertas(dados);
-        carregarDecisao(cnpj);
+        await carregarDecisao(cnpj);
         salvarNoHistorico(dados);
       } catch (erro) {
         mostrarMensagem('error', mensagemErroUsuario(erro));
