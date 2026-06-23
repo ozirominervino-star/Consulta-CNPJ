@@ -10,7 +10,7 @@ Aplicativo de página única para consultar CNPJ usando a API pública do Receit
 - Botão para copiar o CNPJ sem pontuação para colar no Sintegra.
 - Campo para inserir e salvar manualmente a Inscrição Estadual encontrada no Sintegra.
 - Anexo de PDF da consulta SERASA vinculado ao CNPJ consultado, com indicação no resumo e no histórico.
-- Botão `Enviar PDF para nuvem` para sincronizar manualmente um PDF que ficou apenas no dispositivo original.
+- Botão `Enviar PDF para nuvem` para sincronizar manualmente um PDF que ficou apenas no dispositivo original, com progresso visível e cancelamento automático se o envio ficar sem resposta.
 - Registro automático das consultas realizadas.
 - Botão `Consultar histórico` para visualizar os registros salvos.
 - Botão `Sincronizar histórico` para enviar ao Firebase os registros que estavam salvos apenas no dispositivo atual.
@@ -36,7 +36,7 @@ Abra o arquivo `index.html`, digite o CNPJ e clique em `Consultar`. Se o CNPJ ex
 
 Depois de consultar o Sintegra, informe a Inscrição Estadual no campo `Inscrição Estadual encontrada no Sintegra` e clique em `Salvar IE`. A informação ficará salva na ficha, no resumo, no histórico local e, se o Firebase estiver ativo, também será sincronizada.
 
-Após consultar o SERASA, use o botão `Anexar PDF SERASA` para selecionar o relatório em PDF. O arquivo fica vinculado ao CNPJ consultado, entra no histórico e pode ser aberto ou removido pela própria ficha. Localmente, o arquivo é salvo no navegador por IndexedDB. Para abrir em outro dispositivo, ele precisa aparecer como `PDF na nuvem`. Se aparecer como `PDF local` ou `Pendente`, abra o app no dispositivo onde o arquivo foi anexado e clique em `Enviar PDF para nuvem`.
+Após consultar o SERASA, use o botão `Anexar PDF SERASA` para selecionar o relatório em PDF. O arquivo fica vinculado ao CNPJ consultado, entra no histórico e pode ser aberto ou removido pela própria ficha. Localmente, o arquivo é salvo no navegador por IndexedDB. O app não tenta mais enviar automaticamente em segundo plano; depois de anexar, clique em `Enviar PDF para nuvem` para acompanhar o progresso. Para abrir em outro dispositivo, ele precisa aparecer como `PDF na nuvem`. Se aparecer como `PDF local` ou `Pendente`, abra o app no dispositivo onde o arquivo foi anexado e clique em `Enviar PDF para nuvem`.
 
 Se consultas antigas não aparecerem em outro dispositivo, abra o app no dispositivo onde elas aparecem e clique em `Sincronizar histórico`. Para PDFs, o histórico sozinho não leva o arquivo; é necessário usar `Enviar PDF para nuvem` ou anexar novamente o PDF no novo dispositivo.
 
@@ -49,13 +49,13 @@ O app já está com o `firebaseConfig` preenchido no arquivo `index.html`.
 1. Verifique se o Cloud Firestore está ativo no Firebase.
 2. Para sincronizar PDFs SERASA entre dispositivos, verifique também se o Firebase Storage está ativo.
 3. Abra o app e clique em `Testar Firebase`.
-4. O teste agora precisa gravar e ler. Se falhar, o app mostra o diagnóstico do Firebase na tela.
+4. O teste agora precisa gravar e ler no Firestore e gravar no Storage. Se falhar ou ficar sem resposta, o app mostra o diagnóstico do Firebase na tela.
 5. Se precisar testar regras abertas temporariamente, clique em `Copiar regras de teste`. O texto copiado inclui regras separadas para Cloud Firestore e Firebase Storage. Cole cada bloco no local correto do Firebase.
 6. Se o teste gravar corretamente, use `Sincronizar histórico` no dispositivo onde as consultas antigas aparecem.
 7. Para PDFs que aparecem como `PDF local`, abra a ficha no dispositivo original e clique em `Enviar PDF para nuvem`.
 8. No outro dispositivo/usuário, clique em `Consultar histórico` e depois abra a ficha do CNPJ.
 
-Para teste inicial, as regras do Firestore precisam permitir leitura e gravação. Para anexos SERASA sincronizados, as regras do Storage também precisam permitir leitura e gravação na pasta `serasa_pdfs`. Em produção, use autenticação e regras restritas.
+Para teste inicial, as regras do Firestore precisam permitir leitura e gravação. Para anexos SERASA sincronizados, as regras do Storage também precisam permitir leitura e gravação na pasta `serasa_pdfs`. Se o envio ficar parado por cerca de 90 segundos, o app interrompe a tentativa e mostra uma mensagem para verificar internet, login e regras do Storage. Em produção, use autenticação e regras restritas.
 
 ## Login e segurança
 
