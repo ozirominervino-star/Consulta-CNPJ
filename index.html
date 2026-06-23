@@ -944,7 +944,7 @@
           <strong id="serasaPdfNome">Nenhum PDF anexado</strong>
           <div id="serasaPdfMeta" class="serasa-file-meta"></div>
         </div>
-        <p class="serasa-note">Para abrir em outro dispositivo, o PDF precisa aparecer como sincronizado na nuvem. Se ficar apenas local, use o botão “Enviar PDF para nuvem” no dispositivo onde o arquivo foi anexado.</p>
+        <p class="serasa-note">Para abrir em outro dispositivo, o PDF precisa aparecer como sincronizado na nuvem. Nesta versão, o envio usa o Firestore em partes, sem depender do Firebase Storage.</p>
       </div>
 
       <div class="section-title">Dados principais</div>
@@ -1191,8 +1191,10 @@
         firebaseApi = firestoreModule;
         firebaseAuth = authModule.getAuth(app);
         authApi = authModule;
-        firebaseStorage = storageModule.getStorage(app);
-        storageApi = storageModule;
+        if (storageModule && typeof storageModule.getStorage === 'function') {
+          firebaseStorage = storageModule.getStorage(app);
+          storageApi = storageModule;
+        }
         firebasePronto = true;
         definirTextoLivrePorId('firebaseStatus', 'Firebase conectado. Decisões, histórico e anexos podem sincronizar entre dispositivos.');
         configurarAuth();
@@ -1213,7 +1215,12 @@
           const appModule = await import('https://www.gstatic.com/firebasejs/' + versao + '/firebase-app.js');
           const firestoreModule = await import('https://www.gstatic.com/firebasejs/' + versao + '/firebase-firestore.js');
           const authModule = await import('https://www.gstatic.com/firebasejs/' + versao + '/firebase-auth.js');
-          const storageModule = await import('https://www.gstatic.com/firebasejs/' + versao + '/firebase-storage.js');
+          let storageModule = null;
+          try {
+            storageModule = await import('https://www.gstatic.com/firebasejs/' + versao + '/firebase-storage.js');
+          } catch (erroStorageSdk) {
+            console.warn('Firebase Storage SDK não carregou. PDFs novos usarão Firestore em blocos.', erroStorageSdk);
+          }
           return { appModule: appModule, firestoreModule: firestoreModule, authModule: authModule, storageModule: storageModule };
         } catch (erro) {
           ultimoErro = erro;
@@ -1280,41 +1287,39 @@
 
       try {
         const testeRef = firebaseApi.doc(firebaseDb, 'testes', 'conexao');
-        await firebaseApi.setDoc(testeRef, {
+        await executarComTimeout(firebaseApi.setDoc(testeRef, {
           mensagem: 'Teste gravado com sucesso',
           atualizadoEm: new Date().toISOString()
-        }, { merge: true });
+        }, { merge: true }), 30000, 'O Firestore demorou demais para gravar o teste.');
 
-        const leitura = await firebaseApi.getDoc(testeRef);
+        const leitura = await executarComTimeout(firebaseApi.getDoc(testeRef), 30000, 'O Firestore demorou demais para ler o teste.');
         if (!leitura.exists()) throw new Error('Gravou, mas não conseguiu ler o documento de teste.');
+
+        const testePdfRef = firebaseApi.doc(firebaseDb, 'fichas_cnpj/teste_serasa_pdf/serasa_pdf/arquivo');
+        const testeChunksRef = firebaseApi.collection(firebaseDb, 'fichas_cnpj/teste_serasa_pdf/serasa_pdf/arquivo/chunks');
+        await executarComTimeout(firebaseApi.setDoc(testePdfRef, {
+          nome: 'teste-serasa.pdf',
+          tipo: 'application/pdf',
+          tamanho: 4,
+          chunkCount: 1,
+          atualizadoEm: new Date().toISOString()
+        }), 30000, 'O Firestore demorou demais para gravar o teste de PDF.');
+        await executarComTimeout(firebaseApi.setDoc(firebaseApi.doc(testeChunksRef, '0000'), {
+          ordem: 0,
+          conteudo: 'dGVzdGU='
+        }), 30000, 'O Firestore demorou demais para gravar o bloco de PDF.');
+        const chunksTeste = await executarComTimeout(firebaseApi.getDocs(testeChunksRef), 30000, 'O Firestore demorou demais para ler os blocos de PDF.');
+        if (chunksTeste.empty) throw new Error('O teste de PDF não retornou nenhum bloco.');
       } catch (erro) {
         console.error(erro);
-        mostrarErroFirebase('Falha no teste de gravação/leitura. Normalmente é regra do Firestore.', erro);
+        mostrarErroFirebase('Falha no teste do Firebase/Firestore. Confira regras e login.', erro);
         mostrarToast('Falha no Firebase. Veja o diagnóstico.');
         return;
       }
 
-      if (storageApi && firebaseStorage) {
-        try {
-          const storageRef = storageApi.ref(firebaseStorage, 'serasa_pdfs/testes/conexao-storage.txt');
-          const arquivoTeste = new Blob(['Teste Firebase Storage'], { type: 'text/plain' });
-          await enviarArquivoStorageComProgresso(storageRef, arquivoTeste, { contentType: 'text/plain' });
-          try {
-            await storageApi.deleteObject(storageRef);
-          } catch (erroDelete) {
-            console.error(erroDelete);
-          }
-        } catch (erroStorage) {
-          console.error(erroStorage);
-          mostrarErroFirebase('Firestore OK, mas o Firebase Storage não gravou. Conferir regras do Storage para anexos PDF.', erroStorage);
-          mostrarToast('Firestore OK. Storage falhou.');
-          return;
-        }
-      }
-
       exibir(firebaseDiagnostics, 'none');
-      definirTextoLivrePorId('firebaseStatus', 'Firebase OK: Firestore e Storage funcionando.');
-      mostrarToast('Firebase OK: Firestore e Storage.');
+      definirTextoLivrePorId('firebaseStatus', 'Firebase OK: Firestore funcionando. PDFs SERASA serão enviados em blocos pelo Firestore.');
+      mostrarToast('Firebase OK: Firestore funcionando.');
     }
 
     function erroFirebaseTexto(erro) {
@@ -1334,6 +1339,7 @@
 
     function regrasFirebaseTeste() {
       return `// FIRESTORE - TESTE TEMPORÁRIO - aberto
+// Esta regra cobre fichas, histórico e os PDFs SERASA gravados em blocos dentro de fichas_cnpj/{cnpj}/serasa_pdf/arquivo/chunks.
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -1341,16 +1347,6 @@ service cloud.firestore {
       allow read, write: if true;
     }
     match /testes/{document=**} {
-      allow read, write: if true;
-    }
-  }
-}
-
-// STORAGE - TESTE TEMPORÁRIO - use nas regras do Firebase Storage se for sincronizar PDFs
-rules_version = '2';
-service firebase.storage {
-  match /b/{bucket}/o {
-    match /serasa_pdfs/{allPaths=**} {
       allow read, write: if true;
     }
   }
@@ -1365,15 +1361,6 @@ service cloud.firestore {
       allow read, write: if request.auth != null;
     }
     match /testes/{document=**} {
-      allow read, write: if request.auth != null;
-    }
-  }
-}
-
-rules_version = '2';
-service firebase.storage {
-  match /b/{bucket}/o {
-    match /serasa_pdfs/{allPaths=**} {
       allow read, write: if request.auth != null;
     }
   }
@@ -1767,7 +1754,15 @@ service firebase.storage {
     }
 
     function serasaTemArquivoRemoto(meta) {
-      return Boolean(meta && (meta.storagePath || meta.url));
+      return Boolean(meta && (meta.storagePath || meta.url || meta.firestoreChunks || meta.firestoreDocPath));
+    }
+
+    function serasaOrigemRemota(meta) {
+      if (!meta) return '';
+      if (meta.firestoreChunks || meta.firestoreDocPath) return 'Firestore';
+      if (meta.storagePath) return 'Firebase Storage';
+      if (meta.url) return 'Link externo';
+      return '';
     }
 
     function serasaEstaDisponivel(meta) {
@@ -1831,7 +1826,7 @@ service firebase.storage {
 
       if (sincronizarSerasaPdfBtn) {
         const precisaSincronizar = Boolean(meta && meta.disponivelLocal && !serasaTemArquivoRemoto(meta));
-        sincronizarSerasaPdfBtn.disabled = serasaUploadEmAndamento || !precisaSincronizar || !firebasePronto || !storageApi || !firebaseStorage;
+        sincronizarSerasaPdfBtn.disabled = serasaUploadEmAndamento || !precisaSincronizar || !firebasePronto || !firebaseApi || !firebaseDb;
         if (serasaUploadEmAndamento) {
           sincronizarSerasaPdfBtn.textContent = 'Enviando...';
         } else {
@@ -1856,8 +1851,9 @@ service firebase.storage {
         return;
       }
 
+      const origemRemota = serasaOrigemRemota(meta);
       const statusNuvem = serasaTemArquivoRemoto(meta)
-        ? 'Sincronizado na nuvem'
+        ? 'Sincronizado na nuvem' + (origemRemota ? ' (' + origemRemota + ')' : '')
         : meta.disponivelLocal
           ? 'Apenas neste dispositivo'
           : 'Pendente de sincronização no dispositivo original';
@@ -1939,21 +1935,30 @@ service firebase.storage {
         console.error(erro);
       }
 
-      if (firebasePronto) {
+      if (firebasePronto && firebaseApi && firebaseDb) {
         try {
           const docRef = firebaseApi.doc(firebaseDb, 'fichas_cnpj', cnpj);
           const registro = await firebaseApi.getDoc(docRef);
           const dados = registro.exists() ? registro.data() : null;
-          if (dados && dados.serasaPdf) {
-            meta = dados.serasaPdf;
+          const metaRaiz = dados && dados.serasaPdf ? dados.serasaPdf : null;
+
+          if (metaRaiz && serasaTemArquivoRemoto(metaRaiz)) {
+            meta = metaRaiz;
             salvarSerasaMetaLocal(cnpj, meta);
-          } else if (!meta && dados && dados.serasaResumo && dados.serasaResumo !== 'Sem anexo') {
-            meta = {
-              nome: 'Consulta SERASA.pdf',
-              origem: 'Local',
-              anexadoEm: dados.ultimaConsulta || new Date().toISOString(),
-              pendenteSincronizacao: true
-            };
+          } else {
+            const metaFirestore = await obterSerasaMetaFirestore(cnpj);
+            if (metaFirestore) {
+              meta = Object.assign({}, meta || {}, metaRaiz || {}, metaFirestore);
+              salvarSerasaMetaLocal(cnpj, meta);
+              executarEmSegundoPlano(atualizarReferenciaSerasaRaiz(cnpj, meta));
+            } else if (!meta && dados && dados.serasaResumo && dados.serasaResumo !== 'Sem anexo') {
+              meta = {
+                nome: 'Consulta SERASA.pdf',
+                origem: 'Local',
+                anexadoEm: dados.ultimaConsulta || new Date().toISOString(),
+                pendenteSincronizacao: true
+              };
+            }
           }
         } catch (erro) {
           console.error(erro);
@@ -2020,7 +2025,7 @@ service firebase.storage {
         salvarSerasaMetaLocal(cnpj, meta);
         renderizarSerasaPdf(Object.assign({}, meta, { disponivelLocal: true }));
         salvarNoHistorico(dadosAtuais, false);
-        mostrarToast(firebasePronto && storageApi && firebaseStorage
+        mostrarToast(firebasePronto && firebaseApi && firebaseDb
           ? 'PDF anexado neste dispositivo. Clique em Enviar PDF para nuvem.'
           : 'PDF anexado neste navegador.');
         executarEmSegundoPlano(salvarFichaFirebase(dadosAtuais));
@@ -2057,8 +2062,8 @@ service firebase.storage {
         return;
       }
 
-      if (!firebasePronto || !storageApi || !firebaseStorage) {
-        mostrarToast('Firebase Storage ainda não está pronto. Clique em Testar Firebase nas configurações.');
+      if (!firebasePronto || !firebaseApi || !firebaseDb) {
+        mostrarToast('Firebase/Firestore ainda não está pronto. Clique em Testar Firebase nas configurações.');
         return;
       }
 
@@ -2096,79 +2101,234 @@ service firebase.storage {
 
     function erroUploadSerasaAmigavel(erro) {
       const codigo = erro && erro.code ? String(erro.code) : '';
-      if (codigo.includes('unauthorized')) return 'Sem permissão para gravar no Firebase Storage. Confira login e regras do Storage.';
+      if (codigo.includes('permission-denied') || codigo.includes('unauthorized')) return 'Sem permissão para gravar no Firestore. Confira login e regras.';
       if (codigo.includes('unauthenticated')) return 'Faça login antes de enviar o PDF para a nuvem.';
-      if (codigo.includes('quota')) return 'A cota do Firebase Storage pode ter sido atingida.';
-      if (codigo.includes('canceled')) return 'O envio foi interrompido antes de terminar.';
-      if (codigo.includes('retry-limit-exceeded')) return 'O Firebase tentou reenviar várias vezes e não conseguiu. Verifique a conexão.';
+      if (codigo.includes('quota') || codigo.includes('resource-exhausted')) return 'A cota do Firebase/Firestore pode ter sido atingida.';
+      if (codigo.includes('unavailable') || codigo.includes('deadline-exceeded')) return 'O Firebase não respondeu a tempo. Verifique a internet e tente novamente.';
+      if (codigo.includes('invalid-argument')) return 'O arquivo pode estar grande demais para ser gravado. Tente gerar um PDF menor.';
       return erro && erro.message ? erro.message : 'Não foi possível concluir o envio para a nuvem.';
     }
 
-    function enviarArquivoStorageComProgresso(refArquivo, arquivo, metadata, aoProgresso) {
+    function executarComTimeout(promessa, tempoMs, mensagem) {
+      let temporizador = null;
       return new Promise(function (resolve, reject) {
-        let encerrado = false;
-        let temporizador = null;
-        let tarefa = null;
-        const tempoSemRespostaMs = 90000;
+        temporizador = window.setTimeout(function () {
+          reject(new Error(mensagem || 'A operação demorou demais para responder.'));
+        }, tempoMs || 45000);
 
-        function finalizar(comErro, valor) {
-          if (encerrado) return;
-          encerrado = true;
-          if (temporizador) window.clearTimeout(temporizador);
-          if (comErro) reject(valor);
-          else resolve(valor);
-        }
-
-        function reiniciarTemporizador() {
-          if (temporizador) window.clearTimeout(temporizador);
-          temporizador = window.setTimeout(function () {
-            if (encerrado) return;
-            try {
-              if (tarefa && typeof tarefa.cancel === 'function') tarefa.cancel();
-            } catch (erroCancelamento) {
-              console.error(erroCancelamento);
-            }
-            finalizar(true, new Error('O envio ficou sem resposta por 90 segundos. Verifique a internet, o login e as regras do Firebase Storage.'));
-          }, tempoSemRespostaMs);
-        }
-
-        reiniciarTemporizador();
-
-        if (storageApi && typeof storageApi.uploadBytesResumable === 'function') {
-          try {
-            tarefa = storageApi.uploadBytesResumable(refArquivo, arquivo, metadata);
-            tarefa.on(
-              'state_changed',
-              function (snapshot) {
-                reiniciarTemporizador();
-                const total = snapshot.totalBytes || arquivo.size || 0;
-                const enviado = snapshot.bytesTransferred || 0;
-                const percentual = total ? Math.max(1, Math.min(99, Math.round((enviado / total) * 100))) : null;
-                if (aoProgresso) aoProgresso(percentual, enviado, total);
-              },
-              function (erro) {
-                finalizar(true, erro);
-              },
-              function () {
-                if (aoProgresso) aoProgresso(100, arquivo.size || 0, arquivo.size || 0);
-                finalizar(false, tarefa.snapshot);
-              }
-            );
-          } catch (erro) {
-            finalizar(true, erro);
-          }
-          return;
-        }
-
-        storageApi.uploadBytes(refArquivo, arquivo, metadata)
-          .then(function (snapshot) {
-            if (aoProgresso) aoProgresso(100, arquivo.size || 0, arquivo.size || 0);
-            finalizar(false, snapshot);
+        Promise.resolve(promessa)
+          .then(function (valor) {
+            if (temporizador) window.clearTimeout(temporizador);
+            resolve(valor);
           })
           .catch(function (erro) {
-            finalizar(true, erro);
+            if (temporizador) window.clearTimeout(temporizador);
+            reject(erro);
           });
       });
+    }
+
+    function lerBlobComoBase64(blob) {
+      return new Promise(function (resolve, reject) {
+        const leitor = new FileReader();
+        leitor.onload = function () {
+          const resultado = String(leitor.result || '');
+          const virgula = resultado.indexOf(',');
+          resolve(virgula >= 0 ? resultado.slice(virgula + 1) : resultado);
+        };
+        leitor.onerror = function () {
+          reject(leitor.error || new Error('Não foi possível preparar o PDF para envio.'));
+        };
+        leitor.readAsDataURL(blob);
+      });
+    }
+
+    function base64ParaBlob(base64, tipo) {
+      const binario = window.atob(base64 || '');
+      const tamanhoBloco = 512 * 1024;
+      const partes = [];
+
+      for (let inicio = 0; inicio < binario.length; inicio += tamanhoBloco) {
+        const fatia = binario.slice(inicio, inicio + tamanhoBloco);
+        const bytes = new Uint8Array(fatia.length);
+        for (let i = 0; i < fatia.length; i += 1) {
+          bytes[i] = fatia.charCodeAt(i);
+        }
+        partes.push(bytes);
+      }
+
+      return new Blob(partes, { type: tipo || 'application/pdf' });
+    }
+
+    function refSerasaPdfFirestore(cnpj) {
+      return firebaseApi.doc(firebaseDb, 'fichas_cnpj/' + cnpj + '/serasa_pdf/arquivo');
+    }
+
+    function refSerasaChunksFirestore(cnpj) {
+      return firebaseApi.collection(firebaseDb, 'fichas_cnpj/' + cnpj + '/serasa_pdf/arquivo/chunks');
+    }
+
+    function metaSerasaFirestoreDeDoc(cnpj, dados) {
+      const info = dados || {};
+      const atualizadoEm = info.sincronizadoEm || info.atualizadoEm || info.anexadoEm || new Date().toISOString();
+      return {
+        nome: info.nome || 'Consulta SERASA.pdf',
+        tipo: info.tipo || 'application/pdf',
+        tamanho: info.tamanho || 0,
+        responsavel: info.responsavel || '',
+        anexadoEm: info.anexadoEm || atualizadoEm,
+        sincronizadoEm: info.sincronizadoEm || atualizadoEm,
+        origem: 'Nuvem',
+        modoNuvem: 'Firestore',
+        firestoreChunks: true,
+        firestoreDocPath: 'fichas_cnpj/' + cnpj + '/serasa_pdf/arquivo',
+        firestoreChunksPath: 'fichas_cnpj/' + cnpj + '/serasa_pdf/arquivo/chunks',
+        chunkCount: Number(info.chunkCount || 0),
+        encoding: info.encoding || 'base64'
+      };
+    }
+
+    async function obterSerasaMetaFirestore(cnpj) {
+      if (!firebasePronto || !firebaseApi || !firebaseDb) return null;
+
+      const docPdf = await executarComTimeout(
+        firebaseApi.getDoc(refSerasaPdfFirestore(cnpj)),
+        45000,
+        'O Firestore demorou demais para localizar os dados do PDF SERASA.'
+      );
+
+      if (!docPdf.exists()) return null;
+      return metaSerasaFirestoreDeDoc(cnpj, docPdf.data() || {});
+    }
+
+    async function atualizarReferenciaSerasaRaiz(cnpj, meta) {
+      if (!firebasePronto || !firebaseApi || !firebaseDb || !meta || !serasaTemArquivoRemoto(meta)) return;
+
+      await executarComTimeout(
+        firebaseApi.setDoc(firebaseApi.doc(firebaseDb, 'fichas_cnpj', cnpj), {
+          serasaPdf: meta,
+          serasaResumo: 'PDF na nuvem'
+        }, { merge: true }),
+        45000,
+        'O Firestore demorou demais para atualizar a referência do PDF SERASA.'
+      );
+    }
+
+    async function limparSerasaChunksFirestore(cnpj) {
+      const chunksRef = refSerasaChunksFirestore(cnpj);
+      const existentes = await executarComTimeout(
+        firebaseApi.getDocs(chunksRef),
+        45000,
+        'O Firestore demorou demais para listar blocos antigos do PDF.'
+      );
+
+      const remocoes = [];
+      existentes.forEach(function (documento) {
+        remocoes.push(firebaseApi.deleteDoc(documento.ref));
+      });
+
+      for (const remocao of remocoes) {
+        await executarComTimeout(remocao, 45000, 'O Firestore demorou demais para remover um bloco antigo do PDF.');
+      }
+    }
+
+    async function salvarSerasaPdfFirestore(cnpj, arquivo, meta, aoProgresso) {
+      const base64 = await executarComTimeout(
+        lerBlobComoBase64(arquivo),
+        60000,
+        'O navegador demorou demais para preparar o PDF. Tente um arquivo menor.'
+      );
+
+      const tamanhoBloco = 700 * 1024;
+      const totalBlocos = Math.max(1, Math.ceil(base64.length / tamanhoBloco));
+      const chunksRef = refSerasaChunksFirestore(cnpj);
+      const docRef = refSerasaPdfFirestore(cnpj);
+      const atualizadoEm = new Date().toISOString();
+
+      if (aoProgresso) aoProgresso(2, 'Limpando');
+      await limparSerasaChunksFirestore(cnpj);
+
+      for (let indice = 0; indice < totalBlocos; indice += 1) {
+        const inicio = indice * tamanhoBloco;
+        const conteudo = base64.slice(inicio, inicio + tamanhoBloco);
+        const id = String(indice).padStart(4, '0');
+        await executarComTimeout(
+          firebaseApi.setDoc(firebaseApi.doc(chunksRef, id), {
+            ordem: indice,
+            conteudo: conteudo,
+            tamanho: conteudo.length
+          }),
+          45000,
+          'O Firestore demorou demais para gravar o bloco ' + (indice + 1) + ' de ' + totalBlocos + '.'
+        );
+
+        if (aoProgresso) {
+          const percentual = Math.min(95, Math.max(3, Math.round(((indice + 1) / totalBlocos) * 95)));
+          aoProgresso(percentual, 'Enviando');
+        }
+      }
+
+      const metaNuvem = Object.assign({}, meta, {
+        origem: 'Nuvem',
+        modoNuvem: 'Firestore',
+        firestoreChunks: true,
+        firestoreDocPath: 'fichas_cnpj/' + cnpj + '/serasa_pdf/arquivo',
+        firestoreChunksPath: 'fichas_cnpj/' + cnpj + '/serasa_pdf/arquivo/chunks',
+        chunkCount: totalBlocos,
+        encoding: 'base64',
+        sincronizadoEm: atualizadoEm
+      });
+      delete metaNuvem.disponivelLocal;
+      delete metaNuvem.pendenteSincronizacao;
+
+      if (aoProgresso) aoProgresso(98, 'Finalizando');
+      await executarComTimeout(
+        firebaseApi.setDoc(docRef, {
+          nome: metaNuvem.nome || 'Consulta SERASA.pdf',
+          tipo: metaNuvem.tipo || 'application/pdf',
+          tamanho: metaNuvem.tamanho || arquivo.size || 0,
+          responsavel: metaNuvem.responsavel || '',
+          anexadoEm: metaNuvem.anexadoEm || atualizadoEm,
+          sincronizadoEm: atualizadoEm,
+          chunkCount: totalBlocos,
+          encoding: 'base64'
+        }),
+        45000,
+        'O Firestore demorou demais para finalizar o PDF.'
+      );
+
+      return metaNuvem;
+    }
+
+    async function obterSerasaPdfFirestore(cnpj, meta) {
+      const docRef = refSerasaPdfFirestore(cnpj);
+      const docPdf = await executarComTimeout(firebaseApi.getDoc(docRef), 45000, 'O Firestore demorou demais para localizar o PDF.');
+      const metaDoc = docPdf.exists() ? docPdf.data() : {};
+      const chunksRef = refSerasaChunksFirestore(cnpj);
+      const chunksSnapshot = await executarComTimeout(firebaseApi.getDocs(chunksRef), 60000, 'O Firestore demorou demais para baixar os blocos do PDF.');
+      const chunks = [];
+      chunksSnapshot.forEach(function (documento) {
+        const dados = documento.data() || {};
+        chunks.push({ ordem: Number(dados.ordem || 0), conteudo: dados.conteudo || '' });
+      });
+      chunks.sort(function (a, b) { return a.ordem - b.ordem; });
+
+      const esperado = Number((meta && meta.chunkCount) || metaDoc.chunkCount || 0);
+      if (!chunks.length || (esperado && chunks.length < esperado)) {
+        throw new Error('O PDF na nuvem está incompleto. Envie o PDF para nuvem novamente pelo dispositivo original.');
+      }
+
+      const base64 = chunks.map(function (chunk) { return chunk.conteudo; }).join('');
+      return base64ParaBlob(base64, (meta && meta.tipo) || metaDoc.tipo || 'application/pdf');
+    }
+
+    async function excluirSerasaPdfFirestore(cnpj) {
+      await limparSerasaChunksFirestore(cnpj);
+      await executarComTimeout(
+        firebaseApi.deleteDoc(refSerasaPdfFirestore(cnpj)),
+        45000,
+        'O Firestore demorou demais para remover o PDF da nuvem.'
+      );
     }
 
     async function sincronizarSerasaPdfFirebase(cnpj, arquivo, meta) {
@@ -2179,32 +2339,15 @@ service firebase.storage {
       atualizarStatusUploadSerasa(meta, 'Preparando', null);
 
       try {
-        const caminho = 'serasa_pdfs/' + cnpj + '/' + Date.now() + '_' + nomeArquivoSeguro(meta.nome);
-        const refArquivo = storageApi.ref(firebaseStorage, caminho);
-        await enviarArquivoStorageComProgresso(
-          refArquivo,
-          arquivo,
-          { contentType: meta.tipo || 'application/pdf' },
-          function (percentual) {
-            atualizarStatusUploadSerasa(meta, 'Enviando', percentual);
-          }
-        );
-
-        atualizarStatusUploadSerasa(meta, 'Finalizando', 100);
-
-        const metaNuvem = Object.assign({}, meta, {
-          origem: 'Nuvem',
-          storagePath: caminho,
-          sincronizadoEm: new Date().toISOString()
+        const metaNuvem = await salvarSerasaPdfFirestore(cnpj, arquivo, meta, function (percentual, etapa) {
+          atualizarStatusUploadSerasa(meta, etapa || 'Enviando', percentual);
         });
 
+        atualizarStatusUploadSerasa(metaNuvem, 'Finalizado', 100);
+        await atualizarReferenciaSerasaRaiz(cnpj, metaNuvem);
         salvarSerasaMetaLocal(cnpj, metaNuvem);
         renderizarSerasaPdf(Object.assign({}, metaNuvem, { disponivelLocal: true }));
         salvarNoHistorico(dadosAtuais, false);
-        await firebaseApi.setDoc(firebaseApi.doc(firebaseDb, 'fichas_cnpj', cnpj), {
-          serasaPdf: metaNuvem,
-          serasaResumo: 'PDF na nuvem'
-        }, { merge: true });
         await salvarFichaFirebase(dadosAtuais);
         await carregarHistorico();
         mostrarToast('PDF SERASA sincronizado na nuvem.');
@@ -2231,11 +2374,46 @@ service firebase.storage {
     async function abrirSerasaPdf() {
       if (!dadosAtuais) return;
       const cnpj = somenteNumeros(dadosAtuais.cnpj);
-      const meta = obterSerasaMetaLocal(cnpj);
+      let meta = obterSerasaMetaLocal(cnpj);
+
+      if ((!meta || !serasaTemArquivoRemoto(meta)) && firebasePronto && firebaseApi && firebaseDb) {
+        try {
+          const metaFirestore = await obterSerasaMetaFirestore(cnpj);
+          if (metaFirestore) {
+            meta = Object.assign({}, meta || {}, metaFirestore);
+            salvarSerasaMetaLocal(cnpj, meta);
+            renderizarSerasaPdf(meta);
+            executarEmSegundoPlano(atualizarReferenciaSerasaRaiz(cnpj, meta));
+          }
+        } catch (erro) {
+          console.error(erro);
+        }
+      }
 
       if (meta && meta.url) {
         window.open(meta.url, '_blank', 'noopener');
         return;
+      }
+
+      if (meta && (meta.firestoreChunks || meta.firestoreDocPath) && firebasePronto && firebaseApi && firebaseDb) {
+        try {
+          mostrarToast('Baixando PDF SERASA da nuvem...');
+          const blobFirestore = await obterSerasaPdfFirestore(cnpj, meta);
+          try {
+            await salvarSerasaPdfLocal(cnpj, blobFirestore, Object.assign({}, meta, { origem: 'Nuvem' }));
+            renderizarSerasaPdf(Object.assign({}, meta, { disponivelLocal: true }));
+          } catch (erroLocal) {
+            console.error(erroLocal);
+          }
+          serasaPdfObjectUrl = URL.createObjectURL(blobFirestore);
+          window.open(serasaPdfObjectUrl, '_blank', 'noopener');
+          return;
+        } catch (erro) {
+          console.error(erro);
+          mostrarErroFirebase('O PDF está na nuvem, mas este dispositivo não conseguiu baixar pelo Firestore. Confira login e regras.', erro);
+          mostrarToast('Não foi possível abrir o PDF na nuvem. Veja o diagnóstico.');
+          return;
+        }
       }
 
       if (meta && meta.storagePath && storageApi && firebaseStorage) {
@@ -2263,7 +2441,11 @@ service firebase.storage {
       }
 
       if (meta) {
-        mostrarToast('Este PDF não foi enviado à nuvem. Abra o dispositivo original e clique em Enviar PDF para nuvem.');
+        if (serasaTemArquivoRemoto(meta)) {
+          mostrarToast('O PDF está na nuvem, mas este dispositivo não conseguiu acessar o Firebase agora.');
+        } else {
+          mostrarToast('Este PDF não foi enviado à nuvem. Abra o dispositivo original e clique em Enviar PDF para nuvem.');
+        }
         return;
       }
 
@@ -2290,6 +2472,13 @@ service firebase.storage {
             serasaPdf: firebaseApi.deleteField(),
             serasaResumo: 'Sem anexo'
           }, { merge: true });
+          if (meta && (meta.firestoreChunks || meta.firestoreDocPath)) {
+            try {
+              await excluirSerasaPdfFirestore(cnpj);
+            } catch (erroFirestore) {
+              console.error(erroFirestore);
+            }
+          }
           if (meta && meta.storagePath && storageApi && firebaseStorage) {
             try {
               await storageApi.deleteObject(storageApi.ref(firebaseStorage, meta.storagePath));
@@ -2671,6 +2860,11 @@ service firebase.storage {
       if (!firebasePronto) return;
 
       try {
+        try {
+          await excluirSerasaPdfFirestore(cnpj);
+        } catch (erroPdf) {
+          console.error(erroPdf);
+        }
         await firebaseApi.deleteDoc(firebaseApi.doc(firebaseDb, 'fichas_cnpj', cnpj));
       } catch (erro) {
         console.error(erro);
@@ -2717,11 +2911,11 @@ service firebase.storage {
         payload.serasaPdf = serasaPdf;
         payload.serasaResumo = 'PDF na nuvem';
       } else if (serasaPdf) {
-        payload.serasaPdf = firebaseApi.deleteField();
+        // Não apaga a referência remota aqui: outro dispositivo pode ter enviado o PDF antes.
+        // A remoção real do anexo acontece somente pelo botão Remover anexo.
         payload.serasaResumo = 'PDF apenas local - sincronização pendente';
       } else {
-        payload.serasaPdf = firebaseApi.deleteField();
-        payload.serasaResumo = 'Sem anexo';
+        // Sem meta local: não altera campos do SERASA para preservar eventual PDF remoto já existente no Firebase.
       }
       if (decisao) payload.decisao = decisao;
 
@@ -2740,15 +2934,20 @@ service firebase.storage {
       const dataRegistro = registro.data || new Date().toISOString();
       const dataMs = Date.parse(dataRegistro);
 
-      await firebaseApi.setDoc(firebaseApi.doc(firebaseDb, 'fichas_cnpj', cnpj), {
+      const payloadRegistro = {
         cnpj: cnpj,
         cnpjFormatado: formatarCnpj(cnpj),
         nome: registro.nome || '',
         status: registro.status || '',
-        serasaResumo: registro.serasa || '',
         ultimaConsulta: dataRegistro,
         ultimaConsultaMs: Number.isNaN(dataMs) ? Date.now() : dataMs
-      }, { merge: true });
+      };
+
+      if (registro.serasa && registro.serasa !== 'Sem anexo') {
+        payloadRegistro.serasaResumo = registro.serasa;
+      }
+
+      await firebaseApi.setDoc(firebaseApi.doc(firebaseDb, 'fichas_cnpj', cnpj), payloadRegistro, { merge: true });
     }
 
     async function consultarCnpj() {

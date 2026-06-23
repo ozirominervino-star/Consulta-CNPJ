@@ -7,55 +7,39 @@ Aplicativo de página única para consultar CNPJ usando a API pública do Receit
 - Consulta pelo ReceitaWS via JSONP, compatível com uso direto no navegador.
 - Resumo no topo com situação cadastral, Inscrição Estadual, Simples Nacional, porte, UF, última atualização, status comercial e anexo SERASA.
 - Etapa Sintegra: confirma o CNPJ, identifica a UF e abre o portal oficial do Sintegra para selecionar o estado correto.
-- Botão para copiar o CNPJ sem pontuação para colar no Sintegra.
 - Campo para inserir e salvar manualmente a Inscrição Estadual encontrada no Sintegra.
 - Anexo de PDF da consulta SERASA vinculado ao CNPJ consultado, com indicação no resumo e no histórico.
-- Botão `Enviar PDF para nuvem` para sincronizar manualmente um PDF que ficou apenas no dispositivo original, com progresso visível e cancelamento automático se o envio ficar sem resposta.
-- Registro automático das consultas realizadas.
-- Botão `Consultar histórico` para visualizar os registros salvos.
-- Botão `Sincronizar histórico` para enviar ao Firebase os registros que estavam salvos apenas no dispositivo atual.
-- Botão `Alterar selecionado` para reabrir um CNPJ do histórico e atualizar a ficha/decisão.
-- Botão `Excluir selecionado` para apagar um registro do histórico local e, se conectado, também do Firebase.
-- Campo de Inscrição Estadual quando a informação vier disponível no retorno.
-- Alertas básicos de risco cadastral, como empresa não ativa, cadastro recente, ausência de telefone/e-mail e capital social baixo.
-- Recomendação interna salva no navegador: liberado, faturado, PIX à vista, analisar crédito, não vender no prazo ou cadastro incompleto.
-- Sincronização opcional com Firebase/Firestore para acessar decisões e histórico em mais de um dispositivo.
-- Sincronização opcional do PDF SERASA via Firebase Storage, quando as regras do Storage estiverem liberadas.
-- Login opcional via Firebase Authentication por e-mail/senha.
-- Histórico em tabela pesquisável por CNPJ, razão social, UF, situação, status comercial, Serasa ou responsável.
-- Salvamento da ficha completa no Firebase, incluindo retorno ReceitaWS, alertas, validações, decisão interna e metadados do PDF SERASA.
+- Botão `Enviar PDF para nuvem` para sincronizar manualmente um PDF que ficou apenas no dispositivo original.
+- Sincronização do PDF SERASA em blocos pelo Cloud Firestore, sem depender do Firebase Storage.
+- Recuperação do PDF em outro dispositivo mesmo quando a referência principal da ficha não foi gravada corretamente, desde que os blocos estejam no Firestore.
+- Registro automático das consultas realizadas e histórico pesquisável.
+- Recomendação interna salva no navegador e, se conectado, no Firebase.
 - Status de validação para Receita, Sintegra e Crédito.
-- Botão para copiar um resumo pronto para WhatsApp, cadastro ou análise interna.
-- Botão para gerar ficha/PDF pelo navegador.
-- Histórico local das últimas consultas.
-- Dados técnicos do ReceitaWS agrupados em uma área recolhida.
+- Botões para copiar CNPJ, copiar ficha e gerar ficha/PDF pelo navegador.
+- Dados técnicos do ReceitaWS agrupados em área recolhida.
 
 ## Como usar
 
 Abra o arquivo `index.html`, digite o CNPJ e clique em `Consultar`. Se o CNPJ existir, use o botão `Abrir Sintegra oficial`, selecione a UF indicada e cole o CNPJ quando o portal solicitar.
 
-Depois de consultar o Sintegra, informe a Inscrição Estadual no campo `Inscrição Estadual encontrada no Sintegra` e clique em `Salvar IE`. A informação ficará salva na ficha, no resumo, no histórico local e, se o Firebase estiver ativo, também será sincronizada.
+Depois de consultar o Sintegra, informe a Inscrição Estadual no campo `Inscrição Estadual encontrada no Sintegra` e clique em `Salvar IE`.
 
-Após consultar o SERASA, use o botão `Anexar PDF SERASA` para selecionar o relatório em PDF. O arquivo fica vinculado ao CNPJ consultado, entra no histórico e pode ser aberto ou removido pela própria ficha. Localmente, o arquivo é salvo no navegador por IndexedDB. O app não tenta mais enviar automaticamente em segundo plano; depois de anexar, clique em `Enviar PDF para nuvem` para acompanhar o progresso. Para abrir em outro dispositivo, ele precisa aparecer como `PDF na nuvem`. Se aparecer como `PDF local` ou `Pendente`, abra o app no dispositivo onde o arquivo foi anexado e clique em `Enviar PDF para nuvem`.
+Após consultar o SERASA, use o botão `Anexar PDF SERASA` para selecionar o relatório em PDF. O arquivo fica salvo localmente no navegador por IndexedDB. Depois clique em `Enviar PDF para nuvem`. Quando aparecer `PDF na nuvem`, outros dispositivos autorizados deverão conseguir abrir o arquivo pela ficha do mesmo CNPJ.
 
-Se consultas antigas não aparecerem em outro dispositivo, abra o app no dispositivo onde elas aparecem e clique em `Sincronizar histórico`. Para PDFs, o histórico sozinho não leva o arquivo; é necessário usar `Enviar PDF para nuvem` ou anexar novamente o PDF no novo dispositivo.
-
-Observação: a API pública do ReceitaWS tem limite de consultas por minuto e pode retornar dados de cache.
+Nesta versão, ao abrir a ficha em outro dispositivo, o app procura o PDF em dois lugares: primeiro na referência principal da ficha e, se ela estiver ausente, diretamente na subcoleção de blocos do Firestore. Isso corrige o caso em que o PDF aparece no Firebase, mas o outro dispositivo não encontra o anexo.
 
 ## Como testar com Firebase
 
 O app já está com o `firebaseConfig` preenchido no arquivo `index.html`.
 
 1. Verifique se o Cloud Firestore está ativo no Firebase.
-2. Para sincronizar PDFs SERASA entre dispositivos, verifique também se o Firebase Storage está ativo.
-3. Abra o app e clique em `Testar Firebase`.
-4. O teste agora precisa gravar e ler no Firestore e gravar no Storage. Se falhar ou ficar sem resposta, o app mostra o diagnóstico do Firebase na tela.
-5. Se precisar testar regras abertas temporariamente, clique em `Copiar regras de teste`. O texto copiado inclui regras separadas para Cloud Firestore e Firebase Storage. Cole cada bloco no local correto do Firebase.
-6. Se o teste gravar corretamente, use `Sincronizar histórico` no dispositivo onde as consultas antigas aparecem.
-7. Para PDFs que aparecem como `PDF local`, abra a ficha no dispositivo original e clique em `Enviar PDF para nuvem`.
-8. No outro dispositivo/usuário, clique em `Consultar histórico` e depois abra a ficha do CNPJ.
+2. Abra o app e clique em `Testar Firebase`.
+3. O teste precisa gravar e ler no Firestore, inclusive um pequeno teste de PDF em blocos.
+4. Se precisar testar regras abertas temporariamente, clique em `Copiar regras de teste` e cole o texto nas regras do Cloud Firestore.
+5. No dispositivo onde o PDF foi anexado, consulte o CNPJ e clique em `Enviar PDF para nuvem`.
+6. No outro dispositivo, entre com o mesmo acesso do Firebase ou use regras que permitam leitura, consulte o mesmo CNPJ e clique em `Abrir PDF`.
 
-Para teste inicial, as regras do Firestore precisam permitir leitura e gravação. Para anexos SERASA sincronizados, as regras do Storage também precisam permitir leitura e gravação na pasta `serasa_pdfs`. Se o envio ficar parado por cerca de 90 segundos, o app interrompe a tentativa e mostra uma mensagem para verificar internet, login e regras do Storage. Em produção, use autenticação e regras restritas.
+Para teste inicial, as regras do Firestore precisam permitir leitura e gravação em `fichas_cnpj/{document=**}` e `testes/{document=**}`. Como os PDFs SERASA são gravados em subcoleções dentro de `fichas_cnpj`, a regra recursiva cobre também os blocos do arquivo.
 
 ## Login e segurança
 
@@ -66,7 +50,6 @@ Para usar regras seguras:
 3. Crie o primeiro acesso pelo próprio app, no painel `Acesso`.
 4. Depois troque as regras abertas pelas regras de produção copiadas no botão `Copiar regras de teste`.
 
-
 ## Observação sobre anexos SERASA
 
-O PDF pode conter informações sensíveis de crédito. Mantenha o acesso ao app e ao Firebase restrito aos usuários autorizados. Sem Firebase Storage, o anexo fica disponível apenas no navegador onde foi anexado. O histórico pode indicar `PDF local` ou `Pendente`, mas outro dispositivo só conseguirá abrir o arquivo quando ele for enviado ao Firebase Storage ou anexado novamente nesse novo dispositivo.
+O PDF pode conter informações sensíveis de crédito. Mantenha o acesso ao app e ao Firebase restrito aos usuários autorizados. O anexo fica apenas no navegador enquanto aparecer como `PDF local` ou `Pendente`. Depois de clicar em `Enviar PDF para nuvem` e aparecer `PDF na nuvem`, outros dispositivos autorizados conseguem abrir o arquivo pela ficha do CNPJ.
